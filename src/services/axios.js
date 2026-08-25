@@ -15,23 +15,7 @@ api.interceptors.request.use((config) => {
 });
 
 api.interceptors.response.use(
-    (response) => {
-        const data = response.data;
-
-        // The backend wraps paginated endpoints in PageResponse<T>.
-        // Keep the existing frontend contract (response.data = array)
-        // while preserving non-paginated responses unchanged.
-        if (
-            data &&
-            Array.isArray(data.content) &&
-            typeof data.page === "number" &&
-            typeof data.totalPages === "number"
-        ) {
-            response.data = data.content;
-        }
-
-        return response;
-    },
+    (response) => response,
     (err) => {
         if (err.response?.status === 401) {
             localStorage.removeItem("token");
