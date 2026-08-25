@@ -8,10 +8,6 @@ export default function BooksPage() {
     const [searchType, setSearchType] = useState("title");
     const [error, setError] = useState("");
 
-    useEffect(() => {
-        loadBooks();
-    }, []);
-
     const loadBooks = async () => {
         try {
             setError("");
@@ -22,36 +18,40 @@ export default function BooksPage() {
         }
     };
 
+    useEffect(() => {
+        let active = true;
+
+        api.get("/books")
+            .then((res) => {
+                if (active) {
+                    setBooks(res.data);
+                    setError("");
+                }
+            })
+            .catch((err) => {
+                if (active) {
+                    setError(err.response?.data?.detail || "Erro ao carregar livros");
+                }
+            });
+
+        return () => {
+            active = false;
+        };
+    }, []);
+
     const handleSearch = async () => {
         try {
             setError("");
-            const res = await api.get("/books");
-            let filtered = res.data;
+            const params = {};
 
-            if (!search.trim()) {
-                setBooks(filtered);
-                return;
+            if (search.trim()) {
+                if (searchType === "title") params.title = search.trim();
+                if (searchType === "genre") params.genre = search.trim();
+                if (searchType === "author") params.authorName = search.trim();
             }
 
-            if (searchType === "id") {
-                filtered = filtered.filter((b) =>
-                    String(b.id).includes(search)
-                );
-            }
-
-            if (searchType === "isbn") {
-                filtered = filtered.filter((b) =>
-                    b.isbn.includes(search)
-                );
-            }
-
-            if (searchType === "title") {
-                filtered = filtered.filter((b) =>
-                    b.title.toLowerCase().includes(search.toLowerCase())
-                );
-            }
-
-            setBooks(filtered);
+            const res = await api.get("/books", { params });
+            setBooks(res.data);
         } catch (err) {
             setError(err.response?.data?.detail || "Erro ao buscar livros");
         }
@@ -72,13 +72,10 @@ export default function BooksPage() {
 
             <div className="card">
                 <div className="search-bar">
-                    <select
-                        value={searchType}
-                        onChange={(e) => setSearchType(e.target.value)}
-                    >
+                    <select value={searchType} onChange={(e) => setSearchType(e.target.value)}>
                         <option value="title">Buscar por Título</option>
-                        <option value="isbn">Buscar por ISBN</option>
-                        <option value="id">Buscar por ID</option>
+                        <option value="genre">Buscar por Gênero</option>
+                        <option value="author">Buscar por Autor</option>
                     </select>
 
                     <input
@@ -88,11 +85,11 @@ export default function BooksPage() {
                         onChange={(e) => setSearch(e.target.value)}
                     />
 
-                    <button className="btn-primary" onClick={handleSearch}>
-                        Buscar
-                    </button>
-
-                    <button className="btn-secondary" onClick={loadBooks}>
+                    <button className="btn-primary" onClick={handleSearch}>Buscar</button>
+                    <button className="btn-secondary" onClick={() => {
+                        setSearch("");
+                        loadBooks();
+                    }}>
                         Limpar
                     </button>
                 </div>
@@ -116,15 +113,19 @@ export default function BooksPage() {
                         <div className="book-info">
                             <h3>{book.title}</h3>
                             <p>{book.genre}</p>
-                            <small>{book.author?.name}</small>
-                            <small>ISBN: {book.isbn}</small>
 
-                            <span
-                                className={`status ${
-                                    book.available ? "available" : "unavailable"
-                                }`}
-                            >
-                                {book.available ? "Disponível" : "Emprestado"}
+                            {book.authors?.map((author) => (
+                                <small key={author.id}>{author.name}</small>
+                            ))}
+
+                            <small>ISBN: {book.isbn}</small>
+                            <small>Total: {book.totalCopies ?? 0}</small>
+                            <small>Disponíveis: {book.availableCopies ?? 0}</small>
+
+                            <span className={`status ${
+                                (book.availableCopies ?? 0) > 0 ? "available" : "unavailable"
+                            }`}>
+                                {(book.availableCopies ?? 0) > 0 ? "Disponível" : "Indisponível"}
                             </span>
                         </div>
                     </div>

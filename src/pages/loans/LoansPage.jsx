@@ -37,6 +37,8 @@ export default function LoansPage() {
     }, []);
 
     useEffect(() => {
+        // Initial data fetch intentionally synchronizes the page with the API.
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         loadData();
     }, [loadData]);
 
@@ -92,29 +94,17 @@ export default function LoansPage() {
 
             <div className="card">
                 <form className="form-grid" onSubmit={handleSubmit}>
-                    <select
-                        name="bookId"
-                        value={form.bookId}
-                        onChange={handleChange}
-                    >
+                    <select name="bookId" value={form.bookId} onChange={handleChange}>
                         <option value="">Selecione um livro</option>
                         {books.map((book) => (
-                            <option key={book.id} value={book.id}>
-                                {book.title}
-                            </option>
+                            <option key={book.id} value={book.id}>{book.title}</option>
                         ))}
                     </select>
 
-                    <select
-                        name="userId"
-                        value={form.userId}
-                        onChange={handleChange}
-                    >
+                    <select name="userId" value={form.userId} onChange={handleChange}>
                         <option value="">Selecione um usuário</option>
                         {users.map((user) => (
-                            <option key={user.id} value={user.id}>
-                                {user.name}
-                            </option>
+                            <option key={user.id} value={user.id}>{user.name}</option>
                         ))}
                     </select>
 
@@ -128,12 +118,8 @@ export default function LoansPage() {
 
             <div className="card">
                 <h3>Empréstimos em aberto</h3>
-
                 {loading && <p>Carregando...</p>}
-
-                {!loading && loans.length === 0 && (
-                    <p>Nenhum empréstimo ativo</p>
-                )}
+                {!loading && loans.length === 0 && <p>Nenhum empréstimo ativo</p>}
 
                 <div className="list">
                     {loans.map((loan) => (
@@ -143,10 +129,7 @@ export default function LoansPage() {
                                 <p>Usuário: {loan.user?.name}</p>
                                 <p>Data: {new Date(loan.loanDate).toLocaleString()}</p>
                             </div>
-
-                            <button onClick={() => handleReturn(loan.id)}>
-                                Devolver
-                            </button>
+                            <button onClick={() => handleReturn(loan.id)}>Devolver</button>
                         </div>
                     ))}
                 </div>
