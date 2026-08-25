@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../../services/axios";
 
@@ -8,7 +8,7 @@ export default function BooksPage() {
     const [searchType, setSearchType] = useState("title");
     const [error, setError] = useState("");
 
-    const loadBooks = useCallback(async () => {
+    const loadBooks = async () => {
         try {
             setError("");
             const res = await api.get("/books");
@@ -16,11 +16,28 @@ export default function BooksPage() {
         } catch (err) {
             setError(err.response?.data?.detail || "Erro ao carregar livros");
         }
-    }, []);
+    };
 
     useEffect(() => {
-        loadBooks();
-    }, [loadBooks]);
+        let active = true;
+
+        api.get("/books")
+            .then((res) => {
+                if (active) {
+                    setBooks(res.data);
+                    setError("");
+                }
+            })
+            .catch((err) => {
+                if (active) {
+                    setError(err.response?.data?.detail || "Erro ao carregar livros");
+                }
+            });
+
+        return () => {
+            active = false;
+        };
+    }, []);
 
     const handleSearch = async () => {
         try {
