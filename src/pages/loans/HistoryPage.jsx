@@ -6,10 +6,6 @@ export default function HistoryPage() {
     const [loans, setLoans] = useState([]);
     const [error, setError] = useState("");
 
-    useEffect(() => {
-        loadHistory();
-    }, []);
-
     const loadHistory = async () => {
         try {
             setError("");
@@ -19,6 +15,10 @@ export default function HistoryPage() {
             setError(err.response?.data?.detail || "Erro ao carregar histórico");
         }
     };
+
+    useEffect(() => {
+        loadHistory();
+    }, []);
 
     return (
         <div className="page-content">
