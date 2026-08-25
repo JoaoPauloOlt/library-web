@@ -15,111 +15,50 @@ import HistoryPage from "./pages/loans/HistoryPage";
 import HomePage from "./pages/dashboard/HomePage";
 
 import ProtectedRoute from "./routes/ProtectedRoute";
+import PermissionRoute from "./routes/PermissionRoute";
 import Layout from "./components/layout/Layout";
+
+const WithLayout = ({ children }) => (
+    <ProtectedRoute>
+        <Layout>{children}</Layout>
+    </ProtectedRoute>
+);
+
+const WithPermission = ({ permission, children }) => (
+    <PermissionRoute permission={permission}>
+        <Layout>{children}</Layout>
+    </PermissionRoute>
+);
 
 function AppRoutes() {
     const { isAuthenticated } = useAuth();
 
     return (
         <Routes>
-            {/* Públicas */}
             <Route
                 path="/"
-                element={
-                    isAuthenticated ? <Navigate to="/home" /> : <LoginPage />
-                }
+                element={isAuthenticated ? <Navigate to="/home" replace /> : <LoginPage />}
             />
-
             <Route
                 path="/register"
-                element={
-                    isAuthenticated ? <Navigate to="/home" /> : <RegisterPage />
-                }
+                element={isAuthenticated ? <Navigate to="/home" replace /> : <RegisterPage />}
             />
 
-            {/* Protegidas */}
-            <Route
-                path="/home"
-                element={
-                    <ProtectedRoute>
-                        <Layout>
-                            <HomePage />
-                        </Layout>
-                    </ProtectedRoute>
-                }
-            />
-
-            {/* BOOKS */}
-            <Route
-                path="/books"
-                element={
-                    <ProtectedRoute>
-                        <Layout>
-                            <BooksPage />
-                        </Layout>
-                    </ProtectedRoute>
-                }
-            />
-
+            <Route path="/home" element={<WithLayout><HomePage /></WithLayout>} />
+            <Route path="/books" element={<WithLayout><BooksPage /></WithLayout>} />
             <Route
                 path="/books/new"
-                element={
-                    <ProtectedRoute>
-                        <Layout>
-                            <BookFormPage />
-                        </Layout>
-                    </ProtectedRoute>
-                }
+                element={<WithPermission permission="BOOK_CREATE"><BookFormPage /></WithPermission>}
             />
-
-            {/* AUTHORS */}
-            <Route
-                path="/authors"
-                element={
-                    <ProtectedRoute>
-                        <Layout>
-                            <AuthorsPage />
-                        </Layout>
-                    </ProtectedRoute>
-                }
-            />
-
+            <Route path="/authors" element={<WithLayout><AuthorsPage /></WithLayout>} />
             <Route
                 path="/authors/new"
-                element={
-                    <ProtectedRoute>
-                        <Layout>
-                            <AuthorFormPage />
-                        </Layout>
-                    </ProtectedRoute>
-                }
+                element={<WithPermission permission="AUTHOR_CREATE"><AuthorFormPage /></WithPermission>}
             />
+            <Route path="/loans" element={<WithLayout><LoansPage /></WithLayout>} />
+            <Route path="/history" element={<WithLayout><HistoryPage /></WithLayout>} />
 
-            {/* LOANS */}
-            <Route
-                path="/loans"
-                element={
-                    <ProtectedRoute>
-                        <Layout>
-                            <LoansPage />
-                        </Layout>
-                    </ProtectedRoute>
-                }
-            />
-
-            <Route
-                path="/history"
-                element={
-                    <ProtectedRoute>
-                        <Layout>
-                            <HistoryPage />
-                        </Layout>
-                    </ProtectedRoute>
-                }
-            />
-
-            {/* fallback */}
-            <Route path="*" element={<Navigate to="/" />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
     );
 }
