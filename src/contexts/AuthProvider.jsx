@@ -10,17 +10,14 @@ export const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(false);
 
     const login = async (email, password) => {
+        setLoading(true);
+
         try {
-            setLoading(true);
-
             const data = await loginRequest(email, password);
-
             const newToken = data.token;
 
             localStorage.setItem("token", newToken);
             setToken(newToken);
-        } catch (error) {
-            throw error;
         } finally {
             setLoading(false);
         }
