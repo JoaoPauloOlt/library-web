@@ -17,6 +17,8 @@ export default function HistoryPage() {
     };
 
     useEffect(() => {
+        // Initial data fetch intentionally synchronizes the page with the API.
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         loadHistory();
     }, []);
 
@@ -44,24 +46,9 @@ export default function HistoryPage() {
                     return (
                         <div className="history-card" key={loan.id}>
                             <h3>{loan.book?.title}</h3>
-
-                            <p>
-                                <strong>Empréstimo:</strong>{" "}
-                                {loanDate.toLocaleString("pt-BR")}
-                            </p>
-
-                            <p>
-                                <strong>Devolução prevista:</strong>{" "}
-                                {loan.returnDate
-                                    ? new Date(loan.returnDate).toLocaleString("pt-BR")
-                                    : dueDate.toLocaleDateString("pt-BR")}
-                            </p>
-
-                            <span
-                                className={`status ${
-                                    loan.returnDate ? "finished" : "active"
-                                }`}
-                            >
+                            <p><strong>Empréstimo:</strong> {loanDate.toLocaleString("pt-BR")}</p>
+                            <p><strong>Devolução prevista:</strong> {loan.returnDate ? new Date(loan.returnDate).toLocaleString("pt-BR") : dueDate.toLocaleDateString("pt-BR")}</p>
+                            <span className={`status ${loan.returnDate ? "finished" : "active"}`}>
                                 {loan.returnDate ? "Finalizado" : "Ativo"}
                             </span>
                         </div>
