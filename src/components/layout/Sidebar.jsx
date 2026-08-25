@@ -1,5 +1,4 @@
 import { NavLink } from "react-router-dom";
-import { useAuth } from "../../hooks/useAuth";
 
 const NavItem = ({ to, label, icon, onClose }) => (
     <NavLink to={to} onClick={onClose}>
@@ -9,12 +8,6 @@ const NavItem = ({ to, label, icon, onClose }) => (
 );
 
 export default function Sidebar({ isOpen, isCollapsed, onClose, onToggle }) {
-    const { hasAnyPermission } = useAuth();
-    const canManageCatalog = hasAnyPermission([
-        "BOOK_CREATE",
-        "AUTHOR_CREATE"
-    ]);
-
     return (
         <aside
             className={`sidebar ${isOpen ? "open" : ""} ${isCollapsed ? "collapsed" : ""}`}
@@ -40,9 +33,6 @@ export default function Sidebar({ isOpen, isCollapsed, onClose, onToggle }) {
                     <span className="nav-section-title">ACERVO</span>
                     <NavItem to="/books" label="Livros" icon="▣" onClose={onClose} />
                     <NavItem to="/authors" label="Autores" icon="♙" onClose={onClose} />
-                    {canManageCatalog && (
-                        <NavItem to="/authors" label="Gerenciar acervo" icon="⚙" onClose={onClose} />
-                    )}
                 </div>
 
                 <div className="nav-section">
