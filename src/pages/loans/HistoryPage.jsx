@@ -1,59 +1,134 @@
-// src/pages/loans/HistoryPage.jsx
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import api from "../../services/axios";
+import { useAuth } from "../../hooks/useAuth";
+
+const emptyPage = { content: [], page: 0, totalPages: 0, totalElements: 0 };
+
+const statusLabel = {
+    REQUESTED: "Solicitado",
+    APPROVED: "Aprovado",
+    ACTIVE: "Ativo",
+    RETURNED: "Devolvido",
+    LATE: "Atrasado",
+    CANCELED: "Cancelado"
+};
+
+const statusClass = {
+    REQUESTED: "active",
+    APPROVED: "active",
+    ACTIVE: "active",
+    RETURNED: "finished",
+    LATE: "unavailable",
+    CANCELED: "finished"
+};
 
 export default function HistoryPage() {
-    const [loans, setLoans] = useState([]);
+    const { hasPermission } = useAuth();
+    const canReadAll = hasPermission("LOAN_READ_ALL");
+
+    const [historyPage, setHistoryPage] = useState(emptyPage);
+    const [search, setSearch] = useState("");
+    const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
 
-    const loadHistory = async () => {
+    const loadHistory = useCallback(async () => {
         try {
+            setLoading(true);
             setError("");
-            const res = await api.get("/loans");
-            setLoans(res.data);
+
+            const res = canReadAll
+                ? await api.get("/loans", { params: { page: 0, size: 100, sort: "createdAt,desc" } })
+                : await api.get("/loans/my", { params: { page: 0, size: 100, sort: "createdAt,desc" } });
+
+            setHistoryPage(res.data);
         } catch (err) {
             setError(err.response?.data?.detail || "Erro ao carregar histórico");
+        } finally {
+            setLoading(false);
         }
-    };
+    }, [canReadAll]);
 
     useEffect(() => {
-        // Initial data fetch intentionally synchronizes the page with the API.
+        // Initial/API synchronization is intentionally performed from the effect.
         // eslint-disable-next-line react-hooks/set-state-in-effect
         loadHistory();
-    }, []);
+    }, [loadHistory]);
+
+    const filteredHistory = useMemo(() => {
+        const value = search.trim().toLowerCase();
+        if (!value) return historyPage.content ?? [];
+
+        return (historyPage.content ?? []).filter((loan) => (
+            [loan.bookTitle, loan.userName, loan.status]
+                .filter(Boolean)
+                .some((field) => field.toLowerCase().includes(value))
+        ));
+    }, [historyPage.content, search]);
 
     return (
         <div className="page-content">
             <div className="page-header">
-                <h1>Histórico de Empréstimos</h1>
-                <p>Acompanhe empréstimos ativos e finalizados</p>
+                <span className="eyebrow">CIRCULAÇÃO</span>
+                <h1>{canReadAll ? "Histórico geral" : "Meu histórico"}</h1>
+                <p>
+                    {canReadAll
+                        ? "Consulte o histórico completo de empréstimos da biblioteca."
+                        : "Consulte seus empréstimos anteriores e atuais."}
+                </p>
+            </div>
+
+            <div className="card history-toolbar">
+                <div>
+                    <strong>{historyPage.totalElements ?? 0}</strong>
+                    <span> registro(s) no histórico</span>
+                </div>
+                {canReadAll && (
+                    <input
+                        placeholder="Buscar por livro, usuário ou status"
+                        value={search}
+                        onChange={(event) => setSearch(event.target.value)}
+                    />
+                )}
             </div>
 
             {error && <p className="error-text">{error}</p>}
+            {loading && <p>Carregando histórico...</p>}
 
-            {!error && loans.length === 0 && (
-                <div className="empty-state">
-                    <p>Nenhum empréstimo encontrado.</p>
-                </div>
+            {!loading && filteredHistory.length === 0 && (
+                <div className="empty-state card">Nenhum empréstimo encontrado.</div>
             )}
 
             <div className="history-grid">
-                {loans.map((loan) => {
-                    const loanDate = new Date(loan.loanDate);
-                    const dueDate = new Date(loanDate);
-                    dueDate.setDate(dueDate.getDate() + 7);
-
-                    return (
-                        <div className="history-card" key={loan.id}>
-                            <h3>{loan.book?.title}</h3>
-                            <p><strong>Empréstimo:</strong> {loanDate.toLocaleString("pt-BR")}</p>
-                            <p><strong>Devolução prevista:</strong> {loan.returnDate ? new Date(loan.returnDate).toLocaleString("pt-BR") : dueDate.toLocaleDateString("pt-BR")}</p>
-                            <span className={`status ${loan.returnDate ? "finished" : "active"}`}>
-                                {loan.returnDate ? "Finalizado" : "Ativo"}
+                {filteredHistory.map((loan) => (
+                    <article className="history-card" key={loan.id}>
+                        <div className="history-card-heading">
+                            <div>
+                                <span className="eyebrow">#{loan.id}</span>
+                                <h3>{loan.bookTitle}</h3>
+                            </div>
+                            <span className={`status ${statusClass[loan.status] || "active"}`}>
+                                {statusLabel[loan.status] || loan.status}
                             </span>
                         </div>
-                    );
-                })}
+
+                        {canReadAll && <p><strong>Usuário:</strong> {loan.userName}</p>}
+                        {loan.requestDate && (
+                            <p><strong>Solicitação:</strong> {new Date(loan.requestDate).toLocaleString("pt-BR")}</p>
+                        )}
+                        {loan.approvalDate && (
+                            <p><strong>Aprovação:</strong> {new Date(loan.approvalDate).toLocaleString("pt-BR")}</p>
+                        )}
+                        {loan.withdrawDate && (
+                            <p><strong>Retirada:</strong> {new Date(loan.withdrawDate).toLocaleString("pt-BR")}</p>
+                        )}
+                        {loan.dueDate && (
+                            <p><strong>Prazo:</strong> {new Date(loan.dueDate).toLocaleDateString("pt-BR")}</p>
+                        )}
+                        {loan.returnDate && (
+                            <p><strong>Devolução:</strong> {new Date(loan.returnDate).toLocaleString("pt-BR")}</p>
+                        )}
+                    </article>
+                ))}
             </div>
         </div>
     );

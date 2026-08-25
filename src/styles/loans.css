@@ -1,0 +1,138 @@
+.loan-request-card h2,
+.loan-list-heading h2 {
+    font-size: 18px;
+    margin-top: 3px;
+}
+
+.loan-request-form {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 12px;
+}
+
+.loan-list-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    padding-bottom: 16px;
+    margin-bottom: 4px;
+    border-bottom: 1px solid var(--border);
+}
+
+.loan-list-heading > div span {
+    display: block;
+    margin-top: 3px;
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+.loan-search {
+    width: min(360px, 100%);
+}
+
+.loan-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.loan-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    padding: 18px 0;
+    border-bottom: 1px solid var(--border);
+}
+
+.loan-row:last-child {
+    border-bottom: none;
+}
+
+.loan-row h3 {
+    margin: 3px 0;
+    font-size: 16px;
+}
+
+.loan-row p,
+.history-card p {
+    color: var(--text-muted);
+    font-size: 13px;
+}
+
+.loan-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 8px;
+    max-width: 360px;
+}
+
+.loan-actions .status {
+    margin-top: 0;
+}
+
+.history-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+}
+
+.history-toolbar > div {
+    color: var(--text-muted);
+    font-size: 13px;
+}
+
+.history-toolbar strong {
+    color: var(--text);
+    font-size: 20px;
+}
+
+.history-toolbar input {
+    width: min(360px, 100%);
+}
+
+.history-card-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 12px;
+}
+
+.history-card-heading h3 {
+    margin-top: 3px;
+}
+
+.history-card-heading .status {
+    margin-top: 0;
+    flex-shrink: 0;
+}
+
+.history-card p + p {
+    margin-top: 4px;
+}
+
+@media (max-width: 768px) {
+    .loan-request-form,
+    .loan-row,
+    .loan-list-heading,
+    .history-toolbar,
+    .history-card-heading {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .loan-actions {
+        justify-content: flex-start;
+        max-width: none;
+    }
+
+    .loan-search,
+    .history-toolbar input {
+        width: 100%;
+    }
+}

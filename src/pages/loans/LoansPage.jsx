@@ -1,136 +1,206 @@
-import { useState, useEffect, useCallback } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import api from "../../services/axios";
+import { useAuth } from "../../hooks/useAuth";
+
+const emptyPage = { content: [], page: 0, totalPages: 0, totalElements: 0 };
+const CLOSED_STATUSES = ["RETURNED", "CANCELED"];
+
+const statusLabel = {
+    REQUESTED: "Solicitado",
+    APPROVED: "Aprovado",
+    ACTIVE: "Ativo",
+    RETURNED: "Devolvido",
+    LATE: "Atrasado",
+    CANCELED: "Cancelado"
+};
 
 export default function LoansPage() {
-    const [loans, setLoans] = useState([]);
-    const [books, setBooks] = useState([]);
-    const [users, setUsers] = useState([]);
+    const { hasPermission } = useAuth();
+    const canReadAll = hasPermission("LOAN_READ_ALL");
+    const canCreate = hasPermission("LOAN_CREATE");
+    const canApprove = hasPermission("LOAN_APPROVE");
+    const canReturn = hasPermission("LOAN_RETURN");
+    const canCancel = hasPermission("LOAN_CANCEL");
+    const canWithdraw = hasPermission("LOAN_WITHDRAW");
 
-    const [form, setForm] = useState({
-        bookId: "",
-        userId: ""
-    });
-
-    const [loading, setLoading] = useState(false);
+    const [loansPage, setLoansPage] = useState(emptyPage);
+    const [booksPage, setBooksPage] = useState(emptyPage);
+    const [bookId, setBookId] = useState("");
+    const [search, setSearch] = useState("");
+    const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
-    const [error, setError] = useState(null);
+    const [error, setError] = useState("");
 
     const loadData = useCallback(async () => {
         try {
             setLoading(true);
-            setError(null);
+            setError("");
 
-            const [loansRes, booksRes, usersRes] = await Promise.all([
-                api.get("/loans"),
-                api.get("/books"),
-                api.get("/users")
-            ]);
+            const loanRequest = canReadAll
+                ? api.get("/loans", { params: { page: 0, size: 100, sort: "createdAt,desc" } })
+                : api.get("/loans/my", { params: { page: 0, size: 100, sort: "createdAt,desc" } });
 
-            setLoans(loansRes.data.filter((loan) => !loan.returnDate));
-            setBooks(booksRes.data.filter((book) => book.available));
-            setUsers(usersRes.data);
+            const requests = [loanRequest];
+            if (canCreate) {
+                requests.push(api.get("/books", { params: { page: 0, size: 100, sort: "title,asc" } }));
+            }
+
+            const [loansRes, booksRes] = await Promise.all(requests);
+            setLoansPage(loansRes.data);
+            if (booksRes) setBooksPage(booksRes.data);
         } catch (err) {
             setError(err.response?.data?.detail || "Erro ao carregar empréstimos");
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [canCreate, canReadAll]);
 
     useEffect(() => {
-        // Initial data fetch intentionally synchronizes the page with the API.
+        // Initial/API synchronization is intentionally performed from the effect.
         // eslint-disable-next-line react-hooks/set-state-in-effect
         loadData();
     }, [loadData]);
 
-    const handleChange = (e) => {
-        setForm({
-            ...form,
-            [e.target.name]: e.target.value
-        });
-    };
+    const visibleLoans = useMemo(() => {
+        const value = search.trim().toLowerCase();
+        return (loansPage.content ?? [])
+            .filter((loan) => !CLOSED_STATUSES.includes(loan.status))
+            .filter((loan) => {
+                if (!value) return true;
+                return [loan.bookTitle, loan.userName, loan.status]
+                    .filter(Boolean)
+                    .some((field) => field.toLowerCase().includes(value));
+            });
+    }, [loansPage.content, search]);
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+    const availableBooks = (booksPage.content ?? []).filter(
+        (book) => (book.availableCopies ?? 0) > 0
+    );
 
-        if (!form.bookId || !form.userId) {
-            setError("Selecione um livro e um usuário");
-            return;
-        }
+    const handleSubmit = async (event) => {
+        event.preventDefault();
+        if (!bookId) return;
 
         try {
             setSubmitting(true);
-            setError(null);
-
-            await api.post("/loans", form);
-
-            setForm({
-                bookId: "",
-                userId: ""
-            });
-
-            loadData();
+            setError("");
+            await api.post("/loans", { bookId: Number(bookId) });
+            setBookId("");
+            await loadData();
         } catch (err) {
-            setError(err.response?.data?.detail || "Erro ao registrar empréstimo");
+            setError(err.response?.data?.detail || "Erro ao solicitar empréstimo");
         } finally {
             setSubmitting(false);
         }
     };
 
-    const handleReturn = async (id) => {
+    const handleAction = async (id, action) => {
         try {
-            await api.put(`/loans/${id}/return`);
-            loadData();
+            setError("");
+            await api.put(`/loans/${id}/${action}`);
+            await loadData();
         } catch (err) {
-            setError(err.response?.data?.detail || "Erro ao devolver livro");
+            setError(err.response?.data?.detail || "Não foi possível atualizar o empréstimo");
         }
     };
 
     return (
         <div className="page-content">
             <div className="page-header">
-                <h1>Empréstimos</h1>
-                <p>Gerencie os empréstimos ativos da biblioteca</p>
+                <span className="eyebrow">CIRCULAÇÃO</span>
+                <h1>{canReadAll ? "Empréstimos ativos" : "Meus empréstimos"}</h1>
+                <p>
+                    {canReadAll
+                        ? "Pesquise e acompanhe os empréstimos em andamento da biblioteca."
+                        : "Acompanhe suas solicitações e empréstimos em andamento."}
+                </p>
             </div>
 
+            {canCreate && (
+                <section className="card loan-request-card">
+                    <div className="panel-heading">
+                        <div>
+                            <span className="eyebrow">NOVA SOLICITAÇÃO</span>
+                            <h2>Solicitar um livro</h2>
+                        </div>
+                    </div>
+                    <form className="loan-request-form" onSubmit={handleSubmit}>
+                        <select value={bookId} onChange={(event) => setBookId(event.target.value)}>
+                            <option value="">Selecione um livro disponível</option>
+                            {availableBooks.map((book) => (
+                                <option key={book.id} value={book.id}>
+                                    {book.title} — {book.availableCopies} disponível(is)
+                                </option>
+                            ))}
+                        </select>
+                        <button className="btn-primary" type="submit" disabled={!bookId || submitting}>
+                            {submitting ? "Solicitando..." : "Solicitar empréstimo"}
+                        </button>
+                    </form>
+                </section>
+            )}
+
             <div className="card">
-                <form className="form-grid" onSubmit={handleSubmit}>
-                    <select name="bookId" value={form.bookId} onChange={handleChange}>
-                        <option value="">Selecione um livro</option>
-                        {books.map((book) => (
-                            <option key={book.id} value={book.id}>{book.title}</option>
-                        ))}
-                    </select>
-
-                    <select name="userId" value={form.userId} onChange={handleChange}>
-                        <option value="">Selecione um usuário</option>
-                        {users.map((user) => (
-                            <option key={user.id} value={user.id}>{user.name}</option>
-                        ))}
-                    </select>
-
-                    <button type="submit" disabled={submitting}>
-                        {submitting ? "Salvando..." : "Registrar empréstimo"}
-                    </button>
-                </form>
+                <div className="loan-list-heading">
+                    <div>
+                        <h2>{canReadAll ? "Todos os ativos" : "Em andamento"}</h2>
+                        <span>{visibleLoans.length} registro(s)</span>
+                    </div>
+                    {canReadAll && (
+                        <input
+                            className="loan-search"
+                            placeholder="Buscar por livro, usuário ou status"
+                            value={search}
+                            onChange={(event) => setSearch(event.target.value)}
+                        />
+                    )}
+                </div>
 
                 {error && <p className="error-text">{error}</p>}
-            </div>
+                {loading && <p>Carregando empréstimos...</p>}
+                {!loading && visibleLoans.length === 0 && (
+                    <div className="empty-state compact">Nenhum empréstimo ativo encontrado.</div>
+                )}
 
-            <div className="card">
-                <h3>Empréstimos em aberto</h3>
-                {loading && <p>Carregando...</p>}
-                {!loading && loans.length === 0 && <p>Nenhum empréstimo ativo</p>}
-
-                <div className="list">
-                    {loans.map((loan) => (
-                        <div className="list-item" key={loan.id}>
+                <div className="loan-list">
+                    {visibleLoans.map((loan) => (
+                        <article className="loan-row" key={loan.id}>
                             <div>
-                                <strong>{loan.book?.title}</strong>
-                                <p>Usuário: {loan.user?.name}</p>
-                                <p>Data: {new Date(loan.loanDate).toLocaleString()}</p>
+                                <span className="eyebrow">#{loan.id}</span>
+                                <h3>{loan.bookTitle}</h3>
+                                {canReadAll && <p>Usuário: {loan.userName}</p>}
+                                <p>Status: <strong>{statusLabel[loan.status] || loan.status}</strong></p>
+                                {loan.dueDate && (
+                                    <p>Prazo: {new Date(loan.dueDate).toLocaleDateString("pt-BR")}</p>
+                                )}
                             </div>
-                            <button onClick={() => handleReturn(loan.id)}>Devolver</button>
-                        </div>
+
+                            <div className="loan-actions">
+                                <span className={`status ${loan.status === "LATE" ? "unavailable" : "active"}`}>
+                                    {statusLabel[loan.status] || loan.status}
+                                </span>
+                                {canApprove && loan.status === "REQUESTED" && (
+                                    <button className="btn-primary" onClick={() => handleAction(loan.id, "approve")}>
+                                        Aprovar
+                                    </button>
+                                )}
+                                {canReturn && ["APPROVED", "ACTIVE", "LATE"].includes(loan.status) && (
+                                    <button className="btn-secondary" onClick={() => handleAction(loan.id, "return")}>
+                                        Devolver
+                                    </button>
+                                )}
+                                {canCancel && loan.status === "REQUESTED" && (
+                                    <button className="btn-secondary" onClick={() => handleAction(loan.id, "cancel")}>
+                                        Cancelar
+                                    </button>
+                                )}
+                                {canWithdraw && loan.status === "REQUESTED" && (
+                                    <button className="btn-secondary" onClick={() => handleAction(loan.id, "withdraw")}>
+                                        Retirar solicitação
+                                    </button>
+                                )}
+                            </div>
+                        </article>
                     ))}
                 </div>
             </div>
