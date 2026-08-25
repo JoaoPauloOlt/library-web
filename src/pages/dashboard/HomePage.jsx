@@ -25,8 +25,8 @@ export default function HomePage() {
                     api.get("/books", { params: { size: 100, sort: "title,asc" } }),
                     api.get("/authors", { params: { size: 100, sort: "name,asc" } }),
                     canReadAllLoans
-                        ? api.get("/loans", { params: { size: 100, sort: "createdAt,desc" } })
-                        : api.get("/loans/my", { params: { size: 100, sort: "createdAt,desc" } })
+                        ? api.get("/loans", { params: { size: 100, sort: "requestDate,desc" } })
+                        : api.get("/loans/my", { params: { size: 100, sort: "requestDate,desc" } })
                 ];
 
                 const [booksRes, authorsRes, loansRes] = await Promise.all(requests);
