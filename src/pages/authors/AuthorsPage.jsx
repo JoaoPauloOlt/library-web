@@ -23,6 +23,8 @@ export default function AuthorsPage() {
     };
 
     useEffect(() => {
+        // Initial data fetch intentionally synchronizes the page with the API.
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         loadAuthors();
     }, []);
 
