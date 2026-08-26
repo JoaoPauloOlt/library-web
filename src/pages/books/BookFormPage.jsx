@@ -33,8 +33,19 @@ export default function BookFormPage() {
     useEffect(() => {
         const loadAuthors = async () => {
             try {
-                const res = await api.get("/authors");
-                setAuthors(res.data);
+                const res = await api.get("/authors", {
+                    params: {
+                        page: 0,
+                        size: 100,
+                        sort: "name,asc"
+                    }
+                });
+
+                const authorsData = Array.isArray(res.data)
+                    ? res.data
+                    : res.data?.content ?? [];
+
+                setAuthors(authorsData);
             } catch (err) {
                 setError(err.response?.data?.detail || "Erro ao carregar autores");
             }
