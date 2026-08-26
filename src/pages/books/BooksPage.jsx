@@ -108,7 +108,21 @@ export default function BooksPage() {
             <div className="book-grid">
                 {books.map((book) => (
                     <article className="book-card" key={book.id}>
-                        <div className="book-cover">▣</div>
+                        <div className="book-cover">
+                            {book.coverUrl ? (
+                                <img
+                                    src={book.coverUrl}
+                                    alt={`Capa de ${book.title}`}
+                                    loading="lazy"
+                                    style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "12px" }}
+                                    onError={(event) => {
+                                        event.currentTarget.style.display = "none";
+                                    }}
+                                />
+                            ) : (
+                                <span>Sem capa</span>
+                            )}
+                        </div>
                         <div className="book-info">
                             <h3>{book.title}</h3>
                             <p>{book.genre || "Gênero não informado"}</p>
