@@ -1,0 +1,42 @@
+.book-cover img {
+    display: block;
+}
+
+.book-cover:has(img:only-child) {
+    overflow: hidden;
+}
+
+.form-field-full {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.form-field-full label {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text);
+}
+
+.form-field-full small {
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+.book-form-cover-preview {
+    grid-column: 1 / -1;
+    width: 150px;
+    height: 210px;
+    overflow: hidden;
+    border-radius: 12px;
+    background: #f3f4f6;
+    box-shadow: var(--shadow-sm);
+}
+
+.book-form-cover-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}

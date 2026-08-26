@@ -4,6 +4,7 @@ import App from "./App.jsx";
 import "./index.css";
 import "./styles/catalog.css";
 import "./styles/loans.css";
+import "./styles/book-covers.css";
 import { Toaster } from "react-hot-toast";
 import { AuthProvider } from "./contexts/AuthProvider.jsx";
 

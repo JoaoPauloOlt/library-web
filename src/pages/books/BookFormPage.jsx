@@ -16,6 +16,11 @@ const GENRES = [
     "SCIENCE_FICTION"
 ];
 
+const googleBooksCover = (isbn) =>
+    isbn.length === 13
+        ? `https://books.google.com/books/content?vid=isbn${isbn}&printsec=frontcover&img=1&zoom=1&source=gbs_api`
+        : "";
+
 export default function BookFormPage() {
     const navigate = useNavigate();
 
@@ -27,6 +32,7 @@ export default function BookFormPage() {
         isbn: "",
         title: "",
         genre: "",
+        coverUrl: "",
         authorIds: []
     });
 
@@ -58,6 +64,15 @@ export default function BookFormPage() {
         setForm({ ...form, [e.target.name]: e.target.value });
     };
 
+    const handleIsbnChange = (e) => {
+        const isbn = e.target.value.replace(/\D/g, "").slice(0, 13);
+        setForm((current) => ({
+            ...current,
+            isbn,
+            coverUrl: current.coverUrl || googleBooksCover(isbn)
+        }));
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError("");
@@ -69,7 +84,10 @@ export default function BookFormPage() {
 
         try {
             setLoading(true);
-            await api.post("/books", form);
+            await api.post("/books", {
+                ...form,
+                coverUrl: form.coverUrl || null
+            });
             navigate("/books");
         } catch (err) {
             setError(err.response?.data?.detail || "Erro ao criar livro");
@@ -98,10 +116,7 @@ export default function BookFormPage() {
                         maxLength={13}
                         value={form.isbn}
                         placeholder="ISBN (13 dígitos)"
-                        onChange={(e) => setForm({
-                            ...form,
-                            isbn: e.target.value.replace(/\D/g, "").slice(0, 13)
-                        })}
+                        onChange={handleIsbnChange}
                     />
 
                     <input
@@ -134,6 +149,25 @@ export default function BookFormPage() {
                             </option>
                         ))}
                     </select>
+
+                    <div className="form-field-full">
+                        <label htmlFor="coverUrl">Capa do livro</label>
+                        <input
+                            id="coverUrl"
+                            name="coverUrl"
+                            type="url"
+                            placeholder="URL da capa (preenchida automaticamente pelo ISBN)"
+                            value={form.coverUrl}
+                            onChange={handleChange}
+                        />
+                        <small>Você pode substituir a URL automática por outra imagem.</small>
+                    </div>
+
+                    {form.coverUrl && (
+                        <div className="book-form-cover-preview">
+                            <img src={form.coverUrl} alt="Pré-visualização da capa" />
+                        </div>
+                    )}
 
                     {error && <p className="error-text">{error}</p>}
 
