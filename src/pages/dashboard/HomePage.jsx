@@ -43,6 +43,7 @@ export default function HomePage() {
     const canReadAllLoans = hasPermission("LOAN_READ_ALL");
     const canReadUsers = hasPermission("USER_ADMIN");
     const [books, setBooks] = useState([]);
+    const [bookTotal, setBookTotal] = useState(0);
     const [users, setUsers] = useState([]);
     const [loans, setLoans] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -54,7 +55,7 @@ export default function HomePage() {
             try {
                 setLoading(true);
                 const requests = [
-                    api.get("/books", { params: { size: 100, sort: "title,asc" } }),
+                    api.get("/books", { params: { size: 1000, sort: "createdAt,desc" } }),
                     canReadUsers ? api.get("/users", { params: { size: 100, sort: "dateRegister,desc" } }) : Promise.resolve({ data: { content: [] } }),
                     canReadAllLoans
                         ? api.get("/loans", { params: { size: 100, sort: "requestDate,desc" } })
@@ -63,6 +64,7 @@ export default function HomePage() {
                 const [booksRes, usersRes, loansRes] = await Promise.all(requests);
                 if (active) {
                     setBooks(pageContent(booksRes.data));
+                    setBookTotal(booksRes.data?.totalElements ?? pageContent(booksRes.data).length);
                     setUsers(pageContent(usersRes.data));
                     setLoans(pageContent(loansRes.data));
                     setError("");
@@ -80,6 +82,11 @@ export default function HomePage() {
     const activeLoans = useMemo(() => loans.filter((loan) => !["RETURNED", "CANCELLED"].includes(loan.status)), [loans]);
     const currentMonth = getMonthOffset(0);
     const previousMonth = getMonthOffset(-1);
+    const bookTrend = useMemo(() => {
+        const current = books.filter((book) => monthKey(book.createdAt) === currentMonth).length;
+        const previous = books.filter((book) => monthKey(book.createdAt) === previousMonth).length;
+        return getTrend(current, previous);
+    }, [books, currentMonth, previousMonth]);
     const userTrend = useMemo(() => {
         if (!canReadUsers) return null;
         const current = users.filter((item) => monthKey(item.dateRegister) === currentMonth).length;
@@ -114,7 +121,7 @@ export default function HomePage() {
             </div>
             {error && <p className="error-text">{error}</p>}
             <div className="stat-grid">
-                <StatCard label="Livros no acervo" value={loading ? "—" : books.length} description="Livros cadastrados" />
+                <StatCard label="Livros no acervo" value={loading ? "—" : bookTotal} description="Livros cadastrados" trend={loading ? null : bookTrend} />
                 <StatCard label="Usuários cadastrados" value={loading ? "—" : canReadUsers ? users.length : "—"} description={canReadUsers ? "Cadastros no sistema" : "Restrito ao administrador"} trend={loading ? null : userTrend} />
                 <StatCard label="Empréstimos no mês" value={loading ? "—" : monthlyLoans} description="Solicitações neste mês" trend={loading ? null : loanTrend} />
             </div>
@@ -122,7 +129,7 @@ export default function HomePage() {
                 <section className="dashboard-panel">
                     <div className="panel-heading"><div><span className="eyebrow">ACERVO</span><h2>Destaques disponíveis</h2></div><Link to="/books">Ver todos</Link></div>
                     {availableBooks.length === 0 && !loading ? <div className="empty-state compact">Nenhum livro disponível no momento.</div> : <div className="mini-book-list">
-                        {availableBooks.map((book) => <Link to="/books" className="mini-book" key={book.id}><div className="mini-book-cover">▣</div><div><strong>{book.title}</strong><span>{book.authors?.map((author) => author.name).join(", ") || "Autor não informado"}</span><small>{book.availableCopies} disponível(is)</small></div></Link>)}
+                        {availableBooks.map((book) => <Link to="/books" className="mini-book" key={book.id}><div className="mini-book-cover">{book.coverUrl ? <img src={book.coverUrl} alt={`Capa de ${book.title}`} loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "6px" }} /> : "▣"}</div><div><strong>{book.title}</strong><span>{book.authors?.map((author) => author.name).join(", ") || "Autor não informado"}</span><small>{book.availableCopies} disponível(is)</small></div></Link>)}
                     </div>}
                 </section>
                 <section className="dashboard-panel">
