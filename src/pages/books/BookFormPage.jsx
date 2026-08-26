@@ -3,17 +3,8 @@ import api from "../../services/axios";
 import { useNavigate, Link } from "react-router-dom";
 
 const GENRES = [
-    "ACTION",
-    "ADVENTURE",
-    "CLASSIC",
-    "COMIC",
-    "DRAMA",
-    "FANTASY",
-    "HISTORICAL",
-    "HORROR",
-    "MYSTERY",
-    "ROMANCE",
-    "SCIENCE_FICTION"
+    "ACTION", "ADVENTURE", "CLASSIC", "COMIC", "DRAMA", "FANTASY",
+    "HISTORICAL", "HORROR", "MYSTERY", "ROMANCE", "SCIENCE_FICTION"
 ];
 
 const googleBooksCover = (isbn) =>
@@ -23,7 +14,6 @@ const googleBooksCover = (isbn) =>
 
 export default function BookFormPage() {
     const navigate = useNavigate();
-
     const [authors, setAuthors] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
@@ -33,6 +23,7 @@ export default function BookFormPage() {
         title: "",
         genre: "",
         coverUrl: "",
+        quantity: 1,
         authorIds: []
     });
 
@@ -40,28 +31,19 @@ export default function BookFormPage() {
         const loadAuthors = async () => {
             try {
                 const res = await api.get("/authors", {
-                    params: {
-                        page: 0,
-                        size: 100,
-                        sort: "name,asc"
-                    }
+                    params: { page: 0, size: 100, sort: "name,asc" }
                 });
-
-                const authorsData = Array.isArray(res.data)
-                    ? res.data
-                    : res.data?.content ?? [];
-
+                const authorsData = Array.isArray(res.data) ? res.data : res.data?.content ?? [];
                 setAuthors(authorsData);
             } catch (err) {
                 setError(err.response?.data?.detail || "Erro ao carregar autores");
             }
         };
-
         loadAuthors();
     }, []);
 
     const handleChange = (e) => {
-        setForm({ ...form, [e.target.name]: e.target.value });
+        setForm((current) => ({ ...current, [e.target.name]: e.target.value }));
     };
 
     const handleIsbnChange = (e) => {
@@ -82,11 +64,21 @@ export default function BookFormPage() {
             return;
         }
 
+        const quantity = Number.parseInt(form.quantity, 10);
+        if (!Number.isInteger(quantity) || quantity < 0) {
+            setError("A quantidade de exemplares deve ser um número maior ou igual a zero.");
+            return;
+        }
+
         try {
             setLoading(true);
             await api.post("/books", {
-                ...form,
-                coverUrl: form.coverUrl || null
+                isbn: form.isbn,
+                title: form.title,
+                genre: form.genre,
+                coverUrl: form.coverUrl || null,
+                quantity,
+                authorIds: form.authorIds
             });
             navigate("/books");
         } catch (err) {
@@ -101,11 +93,10 @@ export default function BookFormPage() {
             <div className="page-header">
                 <div>
                     <h1>Novo Livro</h1>
-                    <p>Cadastro de livros no acervo</p>
+                    <p>Cadastre o livro e a quantidade de exemplares físicos disponíveis.</p>
                 </div>
-
                 <Link to="/books">
-                    <button className="btn-secondary">Voltar</button>
+                    <button type="button" className="btn-secondary">Voltar</button>
                 </Link>
             </div>
 
@@ -129,26 +120,35 @@ export default function BookFormPage() {
                     <select name="genre" value={form.genre} onChange={handleChange}>
                         <option value="">Selecione o gênero</option>
                         {GENRES.map((genre) => (
-                            <option key={genre} value={genre}>
-                                {genre.replace("_", " ")}
-                            </option>
+                            <option key={genre} value={genre}>{genre.replace("_", " ")}</option>
                         ))}
                     </select>
 
                     <select
                         value={form.authorIds[0] ?? ""}
-                        onChange={(e) => setForm({
-                            ...form,
+                        onChange={(e) => setForm((current) => ({
+                            ...current,
                             authorIds: e.target.value ? [Number(e.target.value)] : []
-                        })}
+                        }))}
                     >
                         <option value="">Selecione o autor</option>
                         {authors.map((author) => (
-                            <option key={author.id} value={author.id}>
-                                {author.name}
-                            </option>
+                            <option key={author.id} value={author.id}>{author.name}</option>
                         ))}
                     </select>
+
+                    <label>
+                        Quantidade de exemplares físicos
+                        <input
+                            name="quantity"
+                            type="number"
+                            min="0"
+                            step="1"
+                            value={form.quantity}
+                            onChange={handleChange}
+                        />
+                        <small>Os exemplares criados aqui entram automaticamente como disponíveis.</small>
+                    </label>
 
                     <div className="form-field-full">
                         <label htmlFor="coverUrl">Capa do livro</label>
