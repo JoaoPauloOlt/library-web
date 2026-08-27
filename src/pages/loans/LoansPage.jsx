@@ -13,6 +13,8 @@ const statusLabel = {
     CANCELED: "Cancelado"
 };
 
+const pageResponse = (response) => response?.data ?? emptyPage;
+
 export default function LoansPage({ showAll = false }) {
     const { hasPermission } = useAuth();
     const canReadAll = hasPermission("LOAN_READ_ALL");
@@ -36,8 +38,8 @@ export default function LoansPage({ showAll = false }) {
             setError("");
 
             const loanRequest = showAll
-                ? api.get("/loans", { params: { page: 0, size: 100, sort: "createdAt,desc" } })
-                : api.get("/loans/my", { params: { page: 0, size: 100, sort: "createdAt,desc" } });
+                ? api.get("/loans", { params: { page: 0, size: 100, sort: "requestDate,desc" } })
+                : api.get("/loans/my", { params: { page: 0, size: 100, sort: "requestDate,desc" } });
 
             const requests = [loanRequest];
             if (canCreate) {
@@ -45,8 +47,8 @@ export default function LoansPage({ showAll = false }) {
             }
 
             const [loansRes, booksRes] = await Promise.all(requests);
-            setLoansPage(loansRes.data);
-            if (booksRes) setBooksPage(booksRes.data);
+            setLoansPage(pageResponse(loansRes));
+            if (booksRes) setBooksPage(pageResponse(booksRes));
         } catch (err) {
             setError(err.response?.data?.detail || "Erro ao carregar empréstimos");
         } finally {

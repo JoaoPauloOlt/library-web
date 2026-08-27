@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
 import { AuthContext } from "./AuthContext";
-import { loginRequest } from "../services/authService";
+import { loginRequest, logoutRequest } from "../services/authService";
 import { decodeJwtPayload, hasAnyPermission, hasPermission } from "../utils/jwt";
 
 export const AuthProvider = ({ children }) => {
@@ -21,15 +21,30 @@ export const AuthProvider = ({ children }) => {
             const newToken = data.token;
 
             localStorage.setItem("token", newToken);
+            if (data.refreshToken) {
+                localStorage.setItem("refreshToken", data.refreshToken);
+            }
             setToken(newToken);
         } finally {
             setLoading(false);
         }
     }, []);
 
-    const logout = useCallback(() => {
-        localStorage.removeItem("token");
-        setToken(null);
+    const logout = useCallback(async () => {
+        const accessToken = localStorage.getItem("token");
+        const refreshToken = localStorage.getItem("refreshToken");
+
+        try {
+            if (accessToken && refreshToken) {
+                await logoutRequest(refreshToken, accessToken);
+            }
+        } catch {
+            // Local cleanup still occurs when the server-side logout cannot be completed.
+        } finally {
+            localStorage.removeItem("token");
+            localStorage.removeItem("refreshToken");
+            setToken(null);
+        }
     }, []);
 
     const value = useMemo(() => ({

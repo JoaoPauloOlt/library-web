@@ -38,6 +38,8 @@ const genreLabel = (genre) => {
         .replace(/\b\w/g, (letter) => letter.toUpperCase());
 };
 
+const pageContent = (response) => response?.data?.content ?? [];
+
 export default function ReportsPage({ type }) {
     const report = REPORTS[type] ?? REPORTS["most-borrowed"];
     const [books, setBooks] = useState([]);
@@ -54,12 +56,12 @@ export default function ReportsPage({ type }) {
             const requests = [api.get("/books", { params: { page: 0, size: 100, sort: "title,asc" } })];
 
             if (needsLoans) {
-                requests.push(api.get("/loans", { params: { page: 0, size: 100, sort: "createdAt,desc" } }));
+                requests.push(api.get("/loans", { params: { page: 0, size: 100, sort: "requestDate,desc" } }));
             }
 
             const [booksRes, loansRes] = await Promise.all(requests);
-            setBooks(booksRes.data ?? []);
-            setLoans(loansRes?.data ?? []);
+            setBooks(pageContent(booksRes));
+            setLoans(pageContent(loansRes));
         } catch (err) {
             setError(err.response?.data?.detail || "Erro ao carregar relatório");
         } finally {
