@@ -68,6 +68,8 @@ export default function ReportsPage({ type }) {
     }, [type]);
 
     useEffect(() => {
+        // Initial/API synchronization is intentionally performed from the effect.
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         loadReportData();
     }, [loadReportData]);
 
