@@ -1,12 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import api from "../../services/axios";
-import { useAuth } from "../../hooks/useAuth";
 
 const emptyPage = { content: [], page: 0, totalPages: 0, totalElements: 0 };
 
 const statusLabel = {
     REQUESTED: "Solicitado",
-    APPROVED: "Aprovado",
     ACTIVE: "Ativo",
     RETURNED: "Devolvido",
     LATE: "Atrasado",
@@ -15,17 +13,13 @@ const statusLabel = {
 
 const statusClass = {
     REQUESTED: "active",
-    APPROVED: "active",
     ACTIVE: "active",
     RETURNED: "finished",
     LATE: "unavailable",
     CANCELED: "finished"
 };
 
-export default function HistoryPage() {
-    const { hasPermission } = useAuth();
-    const canReadAll = hasPermission("LOAN_READ_ALL");
-
+export default function HistoryPage({ showAll = false }) {
     const [historyPage, setHistoryPage] = useState(emptyPage);
     const [search, setSearch] = useState("");
     const [loading, setLoading] = useState(true);
@@ -36,7 +30,7 @@ export default function HistoryPage() {
             setLoading(true);
             setError("");
 
-            const res = canReadAll
+            const res = showAll
                 ? await api.get("/loans", { params: { page: 0, size: 100, sort: "createdAt,desc" } })
                 : await api.get("/loans/my", { params: { page: 0, size: 100, sort: "createdAt,desc" } });
 
@@ -46,7 +40,7 @@ export default function HistoryPage() {
         } finally {
             setLoading(false);
         }
-    }, [canReadAll]);
+    }, [showAll]);
 
     useEffect(() => {
         // Initial/API synchronization is intentionally performed from the effect.
@@ -69,9 +63,9 @@ export default function HistoryPage() {
         <div className="page-content">
             <div className="page-header">
                 <span className="eyebrow">CIRCULAÇÃO</span>
-                <h1>{canReadAll ? "Histórico geral" : "Meu histórico"}</h1>
+                <h1>{showAll ? "Histórico (Todos)" : "Meu histórico"}</h1>
                 <p>
-                    {canReadAll
+                    {showAll
                         ? "Consulte o histórico completo de empréstimos da biblioteca."
                         : "Consulte seus empréstimos anteriores e atuais."}
                 </p>
@@ -82,7 +76,7 @@ export default function HistoryPage() {
                     <strong>{historyPage.totalElements ?? 0}</strong>
                     <span> registro(s) no histórico</span>
                 </div>
-                {canReadAll && (
+                {showAll && (
                     <input
                         placeholder="Buscar por livro, usuário ou status"
                         value={search}
@@ -111,7 +105,7 @@ export default function HistoryPage() {
                             </span>
                         </div>
 
-                        {canReadAll && <p><strong>Usuário:</strong> {loan.userName}</p>}
+                        {showAll && <p><strong>Usuário:</strong> {loan.userName}</p>}
                         {loan.requestDate && (
                             <p><strong>Solicitação:</strong> {new Date(loan.requestDate).toLocaleString("pt-BR")}</p>
                         )}
