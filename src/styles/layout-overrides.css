@@ -2,14 +2,25 @@
    LAYOUT OVERRIDES
 ========================= */
 
-.sidebar {
+.layout {
+    height: 100vh;
     min-height: 100vh;
+    overflow: hidden;
+}
+
+.sidebar {
+    height: 100vh;
+    min-height: 0;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
 }
 
 .sidebar nav {
-    flex: 1;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    scrollbar-width: thin;
 }
 
 .sidebar-top {
@@ -245,6 +256,15 @@
 
 .profile-menu button:hover {
     background: #fef2f2;
+}
+
+.content-area {
+    height: 100vh;
+    min-height: 0;
+}
+
+.page-content {
+    min-height: 0;
 }
 
 @media (max-width: 1024px) {
