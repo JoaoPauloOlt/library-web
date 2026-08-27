@@ -19,6 +19,8 @@ const statusClass = {
     CANCELED: "finished"
 };
 
+const pageResponse = (response) => response?.data ?? emptyPage;
+
 export default function HistoryPage({ showAll = false }) {
     const [historyPage, setHistoryPage] = useState(emptyPage);
     const [search, setSearch] = useState("");
@@ -31,10 +33,10 @@ export default function HistoryPage({ showAll = false }) {
             setError("");
 
             const res = showAll
-                ? await api.get("/loans", { params: { page: 0, size: 100, sort: "createdAt,desc" } })
-                : await api.get("/loans/my", { params: { page: 0, size: 100, sort: "createdAt,desc" } });
+                ? await api.get("/loans", { params: { page: 0, size: 100, sort: "requestDate,desc" } })
+                : await api.get("/loans/my", { params: { page: 0, size: 100, sort: "requestDate,desc" } });
 
-            setHistoryPage(res.data);
+            setHistoryPage(pageResponse(res));
         } catch (err) {
             setError(err.response?.data?.detail || "Erro ao carregar histórico");
         } finally {
