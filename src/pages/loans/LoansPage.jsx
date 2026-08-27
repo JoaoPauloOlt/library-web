@@ -7,14 +7,13 @@ const CLOSED_STATUSES = ["RETURNED", "CANCELED"];
 
 const statusLabel = {
     REQUESTED: "Solicitado",
-    APPROVED: "Aprovado",
     ACTIVE: "Ativo",
     RETURNED: "Devolvido",
     LATE: "Atrasado",
     CANCELED: "Cancelado"
 };
 
-export default function LoansPage() {
+export default function LoansPage({ showAll = false }) {
     const { hasPermission } = useAuth();
     const canReadAll = hasPermission("LOAN_READ_ALL");
     const canCreate = hasPermission("LOAN_CREATE");
@@ -36,7 +35,7 @@ export default function LoansPage() {
             setLoading(true);
             setError("");
 
-            const loanRequest = canReadAll
+            const loanRequest = showAll
                 ? api.get("/loans", { params: { page: 0, size: 100, sort: "createdAt,desc" } })
                 : api.get("/loans/my", { params: { page: 0, size: 100, sort: "createdAt,desc" } });
 
@@ -53,7 +52,7 @@ export default function LoansPage() {
         } finally {
             setLoading(false);
         }
-    }, [canCreate, canReadAll]);
+    }, [canCreate, showAll]);
 
     useEffect(() => {
         // Initial/API synchronization is intentionally performed from the effect.
@@ -108,15 +107,15 @@ export default function LoansPage() {
         <div className="page-content">
             <div className="page-header">
                 <span className="eyebrow">CIRCULAÇÃO</span>
-                <h1>{canReadAll ? "Empréstimos ativos" : "Meus empréstimos"}</h1>
+                <h1>{showAll ? "Empréstimos (Todos)" : "Meus empréstimos"}</h1>
                 <p>
-                    {canReadAll
-                        ? "Pesquise e acompanhe os empréstimos em andamento da biblioteca."
+                    {showAll
+                        ? "Pesquise e gerencie os empréstimos em andamento da biblioteca."
                         : "Acompanhe suas solicitações e empréstimos em andamento."}
                 </p>
             </div>
 
-            {canCreate && (
+            {!showAll && canCreate && (
                 <section className="card loan-request-card">
                     <div className="panel-heading">
                         <div>
@@ -143,10 +142,10 @@ export default function LoansPage() {
             <div className="card">
                 <div className="loan-list-heading">
                     <div>
-                        <h2>{canReadAll ? "Todos os ativos" : "Em andamento"}</h2>
+                        <h2>{showAll ? "Todos os ativos" : "Em andamento"}</h2>
                         <span>{visibleLoans.length} registro(s)</span>
                     </div>
-                    {canReadAll && (
+                    {showAll && canReadAll && (
                         <input
                             className="loan-search"
                             placeholder="Buscar por livro, usuário ou status"
@@ -168,7 +167,7 @@ export default function LoansPage() {
                             <div>
                                 <span className="eyebrow">#{loan.id}</span>
                                 <h3>{loan.bookTitle}</h3>
-                                {canReadAll && <p>Usuário: {loan.userName}</p>}
+                                {showAll && <p>Usuário: {loan.userName}</p>}
                                 <p>Status: <strong>{statusLabel[loan.status] || loan.status}</strong></p>
                                 {loan.dueDate && (
                                     <p>Prazo: {new Date(loan.dueDate).toLocaleDateString("pt-BR")}</p>
@@ -179,12 +178,12 @@ export default function LoansPage() {
                                 <span className={`status ${loan.status === "LATE" ? "unavailable" : "active"}`}>
                                     {statusLabel[loan.status] || loan.status}
                                 </span>
-                                {canApprove && loan.status === "REQUESTED" && (
+                                {showAll && canApprove && loan.status === "REQUESTED" && (
                                     <button className="btn-primary" onClick={() => handleAction(loan.id, "approve")}>
                                         Aprovar
                                     </button>
                                 )}
-                                {canReturn && ["APPROVED", "ACTIVE", "LATE"].includes(loan.status) && (
+                                {canReturn && ["ACTIVE", "LATE"].includes(loan.status) && (
                                     <button className="btn-secondary" onClick={() => handleAction(loan.id, "return")}>
                                         Devolver
                                     </button>
@@ -194,7 +193,7 @@ export default function LoansPage() {
                                         Cancelar
                                     </button>
                                 )}
-                                {canWithdraw && loan.status === "REQUESTED" && (
+                                {!showAll && canWithdraw && loan.status === "REQUESTED" && (
                                     <button className="btn-secondary" onClick={() => handleAction(loan.id, "withdraw")}>
                                         Retirar solicitação
                                     </button>
