@@ -41,7 +41,15 @@ export default function Sidebar({ isOpen, isCollapsed, onClose }) {
     return (
         <aside className={`sidebar ${isOpen ? "open" : ""} ${isCollapsed ? "collapsed" : ""}`}>
             <div className="sidebar-top">
-                <h2>Biblioteca</h2>
+                <div className="sidebar-brand">
+                    <span className="sidebar-logo" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" focusable="false">
+                            <path d="M6 4.5A2.5 2.5 0 0 1 8.5 2H20v17H8.5A2.5 2.5 0 0 0 6 21.5V4.5Z" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+                            <path d="M6 4.5A2.5 2.5 0 0 0 3.5 7v13.5H20M9.5 6H16M9.5 10H16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                        </svg>
+                    </span>
+                    <h2>Biblioteca</h2>
+                </div>
                 <button className="close-btn" onClick={onClose} aria-label="Fechar menu">
                     ✕
                 </button>
