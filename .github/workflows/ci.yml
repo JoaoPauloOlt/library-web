@@ -8,6 +8,7 @@ on:
       - 'feature/**'
       - 'fix/**'
       - 'refactor/**'
+      - 'quality/**'
   pull_request:
     branches:
       - main
@@ -18,7 +19,7 @@ permissions:
 
 jobs:
   test:
-    name: Lint and build
+    name: Lint, test and build
     runs-on: ubuntu-latest
 
     steps:
@@ -36,6 +37,9 @@ jobs:
 
       - name: Lint
         run: npm run lint
+
+      - name: Test
+        run: npm test
 
       - name: Build
         run: npm run build
