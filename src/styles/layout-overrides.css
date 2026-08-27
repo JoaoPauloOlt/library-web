@@ -2,18 +2,62 @@
    LAYOUT OVERRIDES
 ========================= */
 
-.sidebar {
+.layout {
+    height: 100vh;
     min-height: 100vh;
+    overflow: hidden;
+}
+
+.sidebar {
+    height: 100vh;
+    min-height: 0;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
 }
 
 .sidebar nav {
-    flex: 1;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    scrollbar-width: thin;
+}
+
+.sidebar-top {
+    flex-shrink: 0;
+}
+
+.sidebar-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+.sidebar-logo {
+    width: 28px;
+    height: 28px;
+    flex: 0 0 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sidebar-logo svg {
+    width: 24px;
+    height: 24px;
+}
+
+.sidebar.collapsed .sidebar-top {
+    justify-content: center;
 }
 
 .sidebar.collapsed .sidebar-top h2 {
     display: none;
+}
+
+.sidebar.collapsed .sidebar-brand {
+    justify-content: center;
 }
 
 .nav-group {
@@ -92,6 +136,7 @@
     padding: 16px 4px 4px;
     margin-top: 16px;
     border-top: 1px solid rgba(255, 255, 255, 0.2);
+    flex-shrink: 0;
 }
 
 .profile-avatar {
@@ -162,8 +207,9 @@
     width: 34px;
     height: 34px;
     flex-basis: 34px;
-    background: var(--primary);
-    color: white;
+    background: var(--surface-soft);
+    color: var(--text);
+    border: 1px solid var(--border);
 }
 
 .header-profile-copy {
@@ -176,11 +222,12 @@
 
 .header-profile-copy strong {
     font-size: 12px;
+    color: var(--text);
 }
 
 .header-profile-copy span {
     margin-top: 3px;
-    color: var(--text-muted);
+    color: var(--text);
     font-size: 10px;
 }
 
@@ -211,6 +258,15 @@
     background: #fef2f2;
 }
 
+.content-area {
+    height: 100vh;
+    min-height: 0;
+}
+
+.page-content {
+    min-height: 0;
+}
+
 @media (max-width: 1024px) {
     .sidebar {
         min-height: 100vh;
@@ -218,6 +274,10 @@
 
     .sidebar.collapsed .sidebar-top h2 {
         display: block;
+    }
+
+    .sidebar.collapsed .sidebar-brand {
+        justify-content: flex-start;
     }
 
     .sidebar.collapsed .nav-parent > span:nth-child(2),
