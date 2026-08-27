@@ -11,6 +11,7 @@ function BookCover({ book, className = "dashboard-book-cover" }) { return <div c
 export default function HomePage() {
     const { user } = useAuth();
     const [books, setBooks] = useState([]); const [loans, setLoans] = useState([]); const [loading, setLoading] = useState(true); const [error, setError] = useState("");
+    const [currentTime] = useState(() => Date.now());
 
     // API synchronization is an external side effect.
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -32,9 +33,9 @@ export default function HomePage() {
         return () => { active = false; };
     }, []);
 
-    const now = new Date();
-    const monthlyLoans = useMemo(() => loans.filter((loan) => { const date = loan.requestDate || loan.createdAt; if (!date) return false; const value = new Date(date); return value.getMonth() === now.getMonth() && value.getFullYear() === now.getFullYear(); }).length, [loans]);
-    const overdueLoans = useMemo(() => loans.filter((loan) => { if (completedStatuses.includes(loan.status) || !loan.dueDate) return false; return new Date(loan.dueDate).getTime() < Date.now(); }).length, [loans]);
+    const currentDate = new Date(currentTime);
+    const monthlyLoans = useMemo(() => loans.filter((loan) => { const date = loan.requestDate || loan.createdAt; if (!date) return false; const value = new Date(date); return value.getMonth() === currentDate.getMonth() && value.getFullYear() === currentDate.getFullYear(); }).length, [loans, currentDate]);
+    const overdueLoans = useMemo(() => loans.filter((loan) => { if (completedStatuses.includes(loan.status) || !loan.dueDate) return false; return new Date(loan.dueDate).getTime() < currentTime; }).length, [loans, currentTime]);
     const genres = useMemo(() => {
         const groups = new Map();
         books.forEach((book) => { const genre = book.genre || "Não informado"; const current = groups.get(genre) || { genre, count: 0, books: [] }; current.count += Number(book.loanCount ?? 0); current.books.push(book); groups.set(genre, current); });
