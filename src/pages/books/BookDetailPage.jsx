@@ -9,6 +9,8 @@ export default function BookDetailPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
 
+    // API synchronization is an external side effect.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     useEffect(() => {
         let active = true;
         api.get(`/books/${id}`)
@@ -28,30 +30,15 @@ export default function BookDetailPage() {
         <div className="page-content book-detail-page">
             <Link className="back-link" to="/books">← Voltar aos livros</Link>
             <section className="book-detail card">
-                <div className="book-detail-cover">
-                    {book.coverUrl ? <img src={book.coverUrl} alt={`Capa de ${book.title}`} /> : <span>Sem capa</span>}
-                </div>
+                <div className="book-detail-cover">{book.coverUrl ? <img src={book.coverUrl} alt={`Capa de ${book.title}`} /> : <span>Sem capa</span>}</div>
                 <div className="book-detail-content">
                     <span className="eyebrow">DETALHES DO LIVRO</span>
                     <h1>{book.title}</h1>
                     <p className="book-detail-author">{authors}</p>
-                    <div className="book-detail-meta">
-                        <span>{book.genre || "Gênero não informado"}</span>
-                        <span>ISBN: {book.isbn}</span>
-                        <span>{book.totalCopies ?? 0} exemplar(es)</span>
-                    </div>
-                    <div className={`status ${available ? "available" : "unavailable"}`}>
-                        {available ? `${book.availableCopies} disponível(is)` : "Indisponível"}
-                    </div>
-                    <div className="book-description">
-                        <h2>Sinopse</h2>
-                        <p>{book.description || "Este livro ainda não possui uma sinopse cadastrada."}</p>
-                    </div>
-                    <div className="book-detail-actions">
-                        <button className="btn-primary" disabled={!available} onClick={() => navigate(`/loans?bookId=${book.id}`)}>
-                            {available ? "Solicitar empréstimo" : "Livro indisponível"}
-                        </button>
-                    </div>
+                    <div className="book-detail-meta"><span>{book.genre || "Gênero não informado"}</span><span>ISBN: {book.isbn}</span><span>{book.totalCopies ?? 0} exemplar(es)</span></div>
+                    <div className={`status ${available ? "available" : "unavailable"}`}>{available ? `${book.availableCopies} disponível(is)` : "Indisponível"}</div>
+                    <div className="book-description"><h2>Sinopse</h2><p>{book.description || "Este livro ainda não possui uma sinopse cadastrada."}</p></div>
+                    <div className="book-detail-actions"><button className="btn-primary" disabled={!available} onClick={() => navigate(`/loans?bookId=${book.id}`)}>{available ? "Solicitar empréstimo" : "Livro indisponível"}</button></div>
                 </div>
             </section>
         </div>
