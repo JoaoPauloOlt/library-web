@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import api from "../../services/axios";
-import { useNavigate, Link } from "react-router-dom";
 
 const GENRES = ["ACTION", "ADVENTURE", "CLASSIC", "COMIC", "DRAMA", "FANTASY", "HISTORICAL", "HORROR", "MYSTERY", "ROMANCE", "SCIENCE_FICTION"];
 const googleBooksCover = (isbn) => isbn.length === 13 ? `https://books.google.com/books/content?vid=isbn${isbn}&printsec=frontcover&img=1&zoom=1&source=gbs_api` : "";
@@ -9,43 +9,32 @@ export default function BookFormPage() {
     const navigate = useNavigate();
     const [authors, setAuthors] = useState([]); const [loading, setLoading] = useState(false); const [error, setError] = useState("");
     const [form, setForm] = useState({ isbn: "", title: "", genre: "", description: "", coverUrl: "", quantity: 1, authorIds: [] });
-
-    // API synchronization is an external side effect.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     useEffect(() => {
         const loadAuthors = async () => {
-            try {
-                const res = await api.get("/authors", { params: { page: 0, size: 100, sort: "name,asc" } });
-                setAuthors(Array.isArray(res.data) ? res.data : res.data?.content ?? []);
-            } catch (err) { setError(err.response?.data?.detail || "Erro ao carregar autores"); }
-        };
-        loadAuthors();
+            try { const res = await api.get("/authors", { params: { page: 0, size: 100, sort: "name,asc" } }); setAuthors(Array.isArray(res.data) ? res.data : res.data?.content ?? []); }
+            catch (err) { setError(err.response?.data?.detail || "Erro ao carregar autores"); }
+        }; loadAuthors();
     }, []);
-
-    const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
-    const handleIsbnChange = (e) => { const isbn = e.target.value.replace(/\D/g, "").slice(0, 13); setForm((current) => ({ ...current, isbn, coverUrl: current.coverUrl || googleBooksCover(isbn) })); };
-    const handleSubmit = async (e) => {
-        e.preventDefault(); setError("");
-        if (!form.title || !form.isbn || !form.genre || form.authorIds.length === 0) { setError("Preencha todos os campos obrigatórios"); return; }
+    const handleChange = (event) => setForm((current) => ({ ...current, [event.target.name]: event.target.value }));
+    const handleIsbnChange = (event) => { const isbn = event.target.value.replace(/\D/g, "").slice(0, 13); setForm((current) => ({ ...current, isbn, coverUrl: current.coverUrl || googleBooksCover(isbn) })); };
+    const handleSubmit = async (event) => {
+        event.preventDefault(); setError("");
+        if (!form.title.trim() || form.isbn.length !== 13 || !form.genre || form.authorIds.length === 0) { setError("Preencha título, ISBN, gênero e autor."); return; }
         const quantity = Number.parseInt(form.quantity, 10);
         if (!Number.isInteger(quantity) || quantity < 0) { setError("A quantidade de exemplares deve ser um número maior ou igual a zero."); return; }
         try { setLoading(true); await api.post("/books", { ...form, quantity, coverUrl: form.coverUrl || null }); navigate("/books"); }
         catch (err) { setError(err.response?.data?.detail || "Erro ao criar livro"); }
         finally { setLoading(false); }
     };
-
-    return <div className="page-content">
-        <div className="page-header"><div><h1>Novo Livro</h1><p>Cadastre o livro, sua descrição, capa e quantidade de exemplares físicos.</p></div><Link to="/books"><button className="btn-secondary">Voltar</button></Link></div>
-        <form onSubmit={handleSubmit} className="card"><div className="form-grid">
-            <input name="isbn" maxLength={13} value={form.isbn} placeholder="ISBN (13 dígitos)" onChange={handleIsbnChange} />
-            <input name="title" placeholder="Título" value={form.title} onChange={handleChange} />
-            <select name="genre" value={form.genre} onChange={handleChange}><option value="">Selecione o gênero</option>{GENRES.map((genre) => <option key={genre} value={genre}>{genre.replace("_", " ")}</option>)}</select>
-            <select value={form.authorIds[0] ?? ""} onChange={(e) => setForm({ ...form, authorIds: e.target.value ? [Number(e.target.value)] : [] })}><option value="">Selecione o autor</option>{authors.map((author) => <option key={author.id} value={author.id}>{author.name}</option>)}</select>
-            <div className="form-field-full"><label htmlFor="description">Sinopse / descrição</label><textarea id="description" name="description" rows="6" maxLength="5000" placeholder="Descreva brevemente o livro" value={form.description} onChange={handleChange} /></div>
-            <label>Quantidade de exemplares físicos<input name="quantity" type="number" min="0" step="1" value={form.quantity} onChange={handleChange} /><small>Os exemplares criados aqui entram automaticamente como disponíveis.</small></label>
-            <div className="form-field-full"><label htmlFor="coverUrl">Capa do livro</label><input id="coverUrl" name="coverUrl" type="url" placeholder="URL da capa (preenchida automaticamente pelo ISBN)" value={form.coverUrl} onChange={handleChange} /><small>Você pode substituir a URL automática por outra imagem.</small></div>
-            {form.coverUrl && <div className="book-form-cover-preview"><img src={form.coverUrl} alt="Pré-visualização da capa" /></div>}
-            {error && <p className="error-text">{error}</p>}<button className="btn-primary" disabled={loading}>{loading ? "Salvando..." : "Salvar Livro"}</button>
-        </div></form>
+    return <div className="page-content form-page"><div className="page-header page-header-inline"><div><span className="eyebrow">ACERVO</span><h1>Novo livro</h1><p>Cadastre os dados bibliográficos e os exemplares físicos.</p></div><Link to="/books"><button type="button" className="btn-secondary">Voltar</button></Link></div>
+        <form onSubmit={handleSubmit} className="card form-card"><div className="form-card-header"><div><h2>Dados do livro</h2><p>Informações usadas no catálogo e na circulação.</p></div></div><div className="form-grid form-grid-book">
+            <div className="form-field"><label htmlFor="isbn">ISBN <span>*</span></label><input id="isbn" name="isbn" maxLength={13} inputMode="numeric" value={form.isbn} placeholder="9780000000000" onChange={handleIsbnChange} /></div>
+            <div className="form-field"><label htmlFor="title">Título <span>*</span></label><input id="title" name="title" value={form.title} placeholder="Título do livro" onChange={handleChange} /></div>
+            <div className="form-field"><label htmlFor="genre">Gênero <span>*</span></label><select id="genre" name="genre" value={form.genre} onChange={handleChange}><option value="">Selecione o gênero</option>{GENRES.map((genre) => <option key={genre} value={genre}>{genre.replaceAll("_", " ")}</option>)}</select></div>
+            <div className="form-field"><label htmlFor="author">Autor <span>*</span></label><select id="author" value={form.authorIds[0] ?? ""} onChange={(event) => setForm((current) => ({ ...current, authorIds: event.target.value ? [Number(event.target.value)] : [] }))}><option value="">Selecione o autor</option>{authors.map((author) => <option key={author.id} value={author.id}>{author.name}</option>)}</select></div>
+            <div className="form-field form-field-full"><label htmlFor="description">Sinopse / descrição</label><textarea id="description" name="description" rows="6" maxLength="5000" placeholder="Descreva brevemente a obra" value={form.description} onChange={handleChange} /></div>
+            <div className="form-field"><label htmlFor="quantity">Exemplares físicos <span>*</span></label><input id="quantity" name="quantity" type="number" min="0" step="1" value={form.quantity} onChange={handleChange} /><small>Todos os exemplares criados entram como disponíveis.</small></div>
+            <div className="form-field form-field-full"><label htmlFor="coverUrl">URL da capa</label><input id="coverUrl" name="coverUrl" type="url" value={form.coverUrl} placeholder="Preenchida automaticamente pelo ISBN" onChange={handleChange} /><small>Você pode substituir a capa automática por outra URL.</small></div>
+        </div>{form.coverUrl && <div className="book-form-cover-preview"><img src={form.coverUrl} alt="Pré-visualização da capa" /></div>}{error && <p className="error-text">{error}</p>}<div className="form-actions"><button type="button" className="btn-secondary" onClick={() => navigate("/books")}>Cancelar</button><button type="submit" className="btn-primary" disabled={loading}>{loading ? "Salvando..." : "Salvar livro"}</button></div></form>
     </div>;
 }

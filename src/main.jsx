@@ -6,6 +6,7 @@ import "./styles/catalog.css";
 import "./styles/loans.css";
 import "./styles/book-covers.css";
 import "./styles/reports.css";
+import "./styles/forms.css";
 import "./styles/layout-overrides.css";
 import { Toaster } from "react-hot-toast";
 import { AuthProvider } from "./contexts/AuthProvider.jsx";
