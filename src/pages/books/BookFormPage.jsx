@@ -33,6 +33,7 @@ export default function BookFormPage() {
         title: "",
         genre: "",
         coverUrl: "",
+        quantity: 1,
         authorIds: []
     });
 
@@ -82,10 +83,17 @@ export default function BookFormPage() {
             return;
         }
 
+        const quantity = Number.parseInt(form.quantity, 10);
+        if (!Number.isInteger(quantity) || quantity < 0) {
+            setError("A quantidade de exemplares deve ser um número maior ou igual a zero.");
+            return;
+        }
+
         try {
             setLoading(true);
             await api.post("/books", {
                 ...form,
+                quantity,
                 coverUrl: form.coverUrl || null
             });
             navigate("/books");
@@ -101,7 +109,7 @@ export default function BookFormPage() {
             <div className="page-header">
                 <div>
                     <h1>Novo Livro</h1>
-                    <p>Cadastro de livros no acervo</p>
+                    <p>Cadastre o livro e a quantidade de exemplares físicos disponíveis.</p>
                 </div>
 
                 <Link to="/books">
@@ -149,6 +157,19 @@ export default function BookFormPage() {
                             </option>
                         ))}
                     </select>
+
+                    <label>
+                        Quantidade de exemplares físicos
+                        <input
+                            name="quantity"
+                            type="number"
+                            min="0"
+                            step="1"
+                            value={form.quantity}
+                            onChange={handleChange}
+                        />
+                        <small>Os exemplares criados aqui entram automaticamente como disponíveis.</small>
+                    </label>
 
                     <div className="form-field-full">
                         <label htmlFor="coverUrl">Capa do livro</label>
