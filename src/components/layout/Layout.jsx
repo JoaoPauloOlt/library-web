@@ -12,7 +12,14 @@ export default function Layout({ children }) {
 
     return (
         <div className="layout">
-            {sidebarOpen && <div className="sidebar-overlay" onClick={closeSidebar} />}
+            <a className="skip-link" href="#main-content">Pular para o conteúdo principal</a>
+            {sidebarOpen && (
+                <div
+                    className="sidebar-overlay"
+                    onClick={closeSidebar}
+                    aria-hidden="true"
+                />
+            )}
             <Sidebar
                 isOpen={sidebarOpen}
                 isCollapsed={sidebarCollapsed}
@@ -23,7 +30,9 @@ export default function Layout({ children }) {
                     onMenuClick={openSidebar}
                     onToggleSidebar={toggleSidebarDesktop}
                 />
-                <main className="page-content">{children}</main>
+                <main id="main-content" className="page-content" tabIndex="-1">
+                    {children}
+                </main>
             </div>
         </div>
     );
