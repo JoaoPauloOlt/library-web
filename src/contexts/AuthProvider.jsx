@@ -1,12 +1,11 @@
 import { useCallback, useMemo, useState } from "react";
 import { AuthContext } from "./AuthContext";
 import { loginRequest, logoutRequest } from "../services/authService";
+import { getAccessToken, getRefreshToken, saveTokens, clearTokens } from "../services/authStorage";
 import { decodeJwtPayload, hasAnyPermission, hasPermission } from "../utils/jwt";
 
 export const AuthProvider = ({ children }) => {
-    const [token, setToken] = useState(
-        localStorage.getItem("token") || null
-    );
+    const [token, setToken] = useState(getAccessToken);
     const [loading, setLoading] = useState(false);
 
     const claims = useMemo(() => decodeJwtPayload(token), [token]);
@@ -18,31 +17,25 @@ export const AuthProvider = ({ children }) => {
 
         try {
             const data = await loginRequest(email, password);
-            const newToken = data.token;
-
-            localStorage.setItem("token", newToken);
-            if (data.refreshToken) {
-                localStorage.setItem("refreshToken", data.refreshToken);
-            }
-            setToken(newToken);
+            saveTokens(data);
+            setToken(data.token);
         } finally {
             setLoading(false);
         }
     }, []);
 
     const logout = useCallback(async () => {
-        const accessToken = localStorage.getItem("token");
-        const refreshToken = localStorage.getItem("refreshToken");
+        const accessToken = getAccessToken();
+        const refreshToken = getRefreshToken();
 
         try {
             if (accessToken && refreshToken) {
                 await logoutRequest(refreshToken, accessToken);
             }
         } catch {
-            // Local cleanup still occurs when the server-side logout cannot be completed.
+            // Local cleanup still occurs when server-side logout cannot be completed.
         } finally {
-            localStorage.removeItem("token");
-            localStorage.removeItem("refreshToken");
+            clearTokens();
             setToken(null);
         }
     }, []);

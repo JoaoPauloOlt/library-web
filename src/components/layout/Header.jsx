@@ -24,17 +24,34 @@ export default function Header({ onMenuClick, onToggleSidebar }) {
     return (
         <header className="header">
             <div className="header-left">
-                <button className="menu-btn mobile-only" onClick={onMenuClick} aria-label="Abrir menu">
+                <button
+                    className="menu-btn mobile-only"
+                    type="button"
+                    onClick={onMenuClick}
+                    aria-label="Abrir menu de navegação"
+                >
                     ☰
                 </button>
-                <button className="menu-btn desktop-only" onClick={onToggleSidebar} aria-label="Recolher menu">
+                <button
+                    className="menu-btn desktop-only"
+                    type="button"
+                    onClick={onToggleSidebar}
+                    aria-label="Recolher ou expandir menu de navegação"
+                >
                     ☰
                 </button>
                 <h3>Library System</h3>
             </div>
 
             <div className="header-right">
-                <button className="profile-trigger" type="button" onClick={() => setProfileOpen((open) => !open)} aria-expanded={profileOpen}>
+                <button
+                    className="profile-trigger"
+                    type="button"
+                    onClick={() => setProfileOpen((open) => !open)}
+                    aria-expanded={profileOpen}
+                    aria-haspopup="menu"
+                    aria-label={`Menu da conta de ${displayName}`}
+                >
                     <span className="profile-avatar header-avatar" aria-hidden="true">{initials(displayName)}</span>
                     <span className="header-profile-copy">
                         <strong>{displayName}</strong>
@@ -44,8 +61,8 @@ export default function Header({ onMenuClick, onToggleSidebar }) {
                 </button>
 
                 {profileOpen && (
-                    <div className="profile-menu">
-                        <button type="button" onClick={logout}>Sair</button>
+                    <div className="profile-menu" role="menu">
+                        <button type="button" role="menuitem" onClick={logout}>Sair</button>
                     </div>
                 )}
             </div>

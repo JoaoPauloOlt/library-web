@@ -1,0 +1,102 @@
+/* Phase 3: keyboard navigation, reduced motion and mobile resilience. */
+.skip-link {
+    position: fixed;
+    top: 8px;
+    left: 8px;
+    z-index: 100;
+    transform: translateY(-150%);
+    padding: 10px 14px;
+    border-radius: var(--radius-sm);
+    background: var(--secondary);
+    color: white;
+    font-weight: 700;
+    box-shadow: var(--shadow-md);
+}
+
+.skip-link:focus {
+    transform: translateY(0);
+}
+
+:where(a, button, input, select, textarea):focus-visible {
+    outline: 3px solid var(--primary);
+    outline-offset: 2px;
+}
+
+.page-content:focus {
+    outline: none;
+}
+
+.route-loading {
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    color: var(--text-muted);
+    font-weight: 700;
+}
+
+.app-error {
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    background: var(--bg);
+}
+
+.app-error-card {
+    width: min(100%, 520px);
+    padding: 32px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+    box-shadow: var(--shadow-lg);
+}
+
+.app-error-card h1 {
+    margin: 6px 0 8px;
+    font-size: 24px;
+}
+
+.app-error-card p {
+    margin-bottom: 20px;
+    color: var(--text-muted);
+}
+
+@media (max-width: 768px) {
+    .page-content {
+        padding: 20px 16px;
+    }
+
+    .page-header-inline,
+    .dashboard-hero {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .stat-grid,
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .search-bar {
+        flex-direction: column;
+    }
+
+    .search-bar input,
+    .search-bar select,
+    .search-bar button {
+        width: 100%;
+        min-width: 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+    }
+}
