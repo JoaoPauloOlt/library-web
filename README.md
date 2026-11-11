@@ -62,9 +62,12 @@ src/
 
 ### Circulação
 
-- Usuários consultam seus próprios empréstimos.
+- Usuários consultam seus próprios empréstimos e podem solicitar livros disponíveis.
 - Funcionários com `LOAN_READ_ALL` consultam todos os empréstimos.
+- Funcionários podem localizar usuários ativos e registrar empréstimos em nome deles.
+- Ações de aprovação, devolução e cancelamento respeitam as permissões RBAC.
 - Histórico segue a mesma regra de RBAC.
+- A partir dos detalhes de um livro, o ID é encaminhado à tela de empréstimos para pré-seleção.
 - Sidebar possui submenus recolhíveis para Empréstimos e Histórico.
 
 ### Relatórios
@@ -94,11 +97,19 @@ Disponíveis apenas para funcionários/admins com `LOAN_READ_ALL`:
 
 ## Configuração
 
-Crie `.env` a partir de `.env.example` quando disponível:
+Copie o arquivo de exemplo para criar sua configuração local:
+
+```bash
+cp .env.example .env
+```
+
+O arquivo `.env` deve apontar para a URL da API:
 
 ```env
 VITE_API_URL=http://localhost:8080
 ```
+
+Não coloque credenciais ou segredos do backend no frontend.
 
 ## Desenvolvimento
 
@@ -112,21 +123,35 @@ Frontend: `http://localhost:5173`
 ## Validação
 
 ```bash
+npm test
 npm run lint
 npm run build
 ```
 
-O CI deve executar lint e build antes do merge em `develop`.
+O comando `npm run build` também executa os testes por meio do script `prebuild`. O CI deve executar lint e build antes do merge em `develop`.
 
 ## Integração com a API
 
-O frontend espera a `library-api` disponível em `VITE_API_URL`. O endpoint de detalhes do catálogo já existe na API:
+O frontend espera a `library-api` disponível em `VITE_API_URL`. O fluxo de circulação utiliza:
+
+```http
+GET  /loans/my
+GET  /loans
+GET  /loans/users
+POST /loans
+POST /loans/for-user
+PUT  /loans/{id}/approve
+PUT  /loans/{id}/return
+PUT  /loans/{id}/cancel
+```
+
+A listagem de usuários ativos e a criação de empréstimos em nome de terceiros exigem a permissão `LOAN_READ_ALL`. A API também fornece os detalhes do catálogo:
 
 ```http
 GET /books/{id}
 ```
 
-A versão atual também usa `description` no modelo de livro. A API deve executar a migration `V10__add_book_description.sql` antes de usar esse campo em banco existente.
+A versão atual usa `description` no modelo de livro; a configuração do banco deve refletir a versão atual do backend.
 
 ## Git workflow
 
