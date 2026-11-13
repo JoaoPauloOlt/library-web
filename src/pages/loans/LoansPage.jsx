@@ -34,7 +34,9 @@ export default function LoansPage({ showAll = false }) {
     const canApprove = hasPermission("LOAN_APPROVE");
     const canReturn = hasPermission("LOAN_RETURN");
     const canCancel = hasPermission("LOAN_CANCEL");
-    const needsBorrowerSelection = showAll && canReadAll;
+    const canCreateForUser = hasPermission("LOAN_CREATE_FOR_USER");
+    const canCreateInCurrentView = showAll ? canCreateForUser : canCreate;
+    const needsBorrowerSelection = showAll && canCreateForUser;
 
     const [loansPage, setLoansPage] = useState(emptyPage);
     const [booksPage, setBooksPage] = useState(emptyPage);
@@ -57,7 +59,7 @@ export default function LoansPage({ showAll = false }) {
 
             const requests = [
                 loanRequest,
-                canCreate
+                canCreateInCurrentView
                     ? api.get("/books", { params: { page: 0, size: 100, sort: "title,asc" } })
                     : Promise.resolve(null),
                 needsBorrowerSelection
@@ -75,7 +77,7 @@ export default function LoansPage({ showAll = false }) {
         } finally {
             setLoading(false);
         }
-    }, [canCreate, needsBorrowerSelection, showAll]);
+    }, [canCreateInCurrentView, needsBorrowerSelection, showAll]);
 
     useEffect(() => {
         // Initial/API synchronization is intentionally performed from the effect.
@@ -159,7 +161,7 @@ export default function LoansPage({ showAll = false }) {
                 </p>
             </div>
 
-            {canCreate && (
+            {canCreateInCurrentView && (
                 <section className="card loan-request-card">
                     <div className="panel-heading">
                         <div>
@@ -178,7 +180,7 @@ export default function LoansPage({ showAll = false }) {
                                 <option value="">Selecione um usuário ativo</option>
                                 {(usersPage.content ?? []).map((user) => (
                                     <option key={user.id} value={user.id}>
-                                        {user.name}
+                                        {user.name} — {user.email}
                                     </option>
                                 ))}
                             </select>

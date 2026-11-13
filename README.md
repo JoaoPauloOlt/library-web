@@ -43,6 +43,7 @@ src/
 - `BOOK_CREATE` controla criação de livros.
 - `AUTHOR_CREATE` controla criação de autores.
 - `LOAN_READ_ALL` controla empréstimos/histórico gerais e relatórios.
+- `LOAN_CREATE_FOR_USER` controla a criação de empréstimos em nome de terceiros.
 
 ### Catálogo
 
@@ -64,7 +65,7 @@ src/
 
 - Usuários consultam seus próprios empréstimos e podem solicitar livros disponíveis.
 - Funcionários com `LOAN_READ_ALL` consultam todos os empréstimos.
-- Funcionários podem localizar usuários ativos e registrar empréstimos em nome deles.
+- Funcionários com `LOAN_CREATE_FOR_USER` podem localizar usuários ativos e registrar empréstimos em nome deles.
 - Ações de aprovação, devolução e cancelamento respeitam as permissões RBAC.
 - Histórico segue a mesma regra de RBAC.
 - A partir dos detalhes de um livro, o ID é encaminhado à tela de empréstimos para pré-seleção.
@@ -128,7 +129,7 @@ npm run lint
 npm run build
 ```
 
-O comando `npm run build` também executa os testes por meio do script `prebuild`. O CI deve executar lint e build antes do merge em `develop`.
+O comando `npm run build` também executa os testes por meio do script `prebuild`. O CI executa lint, testes e build antes do merge em `develop`.
 
 ## Integração com a API
 
@@ -145,7 +146,9 @@ PUT  /loans/{id}/return
 PUT  /loans/{id}/cancel
 ```
 
-A listagem de usuários ativos e a criação de empréstimos em nome de terceiros exigem a permissão `LOAN_READ_ALL`. A API também fornece os detalhes do catálogo:
+A listagem de usuários ativos e a criação de empréstimos em nome de terceiros exigem `LOAN_CREATE_FOR_USER`. O endpoint retorna somente usuários com status `ACTIVE`; a API valida novamente o status do usuário no momento da criação do empréstimo.
+
+A listagem global de empréstimos e o histórico administrativo exigem `LOAN_READ_ALL`. A API também fornece os detalhes do catálogo:
 
 ```http
 GET /books/{id}
