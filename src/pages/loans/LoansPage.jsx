@@ -1,4 +1,15 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import {
+    approveLoan,
+    cancelLoan,
+    createLoan,
+    createLoanForUser,
+    getLoanUsers,
+    getLoans,
+    getMyLoans,
+    returnLoan
+} from "../../api/loanApi";
 import api from "../../services/axios";
 import { useAuth } from "../../hooks/useAuth";
 
@@ -17,16 +28,21 @@ const pageResponse = (response) => response?.data ?? emptyPage;
 
 export default function LoansPage({ showAll = false }) {
     const { hasPermission } = useAuth();
+    const [searchParams, setSearchParams] = useSearchParams();
     const canReadAll = hasPermission("LOAN_READ_ALL");
     const canCreate = hasPermission("LOAN_CREATE");
     const canApprove = hasPermission("LOAN_APPROVE");
     const canReturn = hasPermission("LOAN_RETURN");
-    const canCancel = hasPermission("LOAN_CANCEL");
-    const canWithdraw = hasPermission("LOAN_WITHDRAW");
+    const canCancel = hasPermission("LOAN_CANCEL") || hasPermission("LOAN_CANCEL_ANY");
+    const canCreateForUser = hasPermission("LOAN_CREATE_FOR_USER");
+    const canCreateInCurrentView = showAll ? canCreateForUser : canCreate;
+    const needsBorrowerSelection = showAll && canCreateForUser;
 
     const [loansPage, setLoansPage] = useState(emptyPage);
     const [booksPage, setBooksPage] = useState(emptyPage);
-    const [bookId, setBookId] = useState("");
+    const [usersPage, setUsersPage] = useState(emptyPage);
+    const [bookId, setBookId] = useState(() => searchParams.get("bookId") ?? "");
+    const [userId, setUserId] = useState("");
     const [search, setSearch] = useState("");
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
@@ -38,23 +54,30 @@ export default function LoansPage({ showAll = false }) {
             setError("");
 
             const loanRequest = showAll
-                ? api.get("/loans", { params: { page: 0, size: 100, sort: "requestDate,desc" } })
-                : api.get("/loans/my", { params: { page: 0, size: 100, sort: "requestDate,desc" } });
+                ? getLoans({ page: 0, size: 100, sort: "requestDate,desc" })
+                : getMyLoans({ page: 0, size: 100, sort: "requestDate,desc" });
 
-            const requests = [loanRequest];
-            if (canCreate) {
-                requests.push(api.get("/books", { params: { page: 0, size: 100, sort: "title,asc" } }));
-            }
+            const requests = [
+                loanRequest,
+                canCreateInCurrentView
+                    ? api.get("/books", { params: { page: 0, size: 100, sort: "title,asc" } })
+                    : Promise.resolve(null),
+                needsBorrowerSelection
+                    ? getLoanUsers({ page: 0, size: 100, sort: "name,asc" })
+                    : Promise.resolve(null)
+            ];
 
-            const [loansRes, booksRes] = await Promise.all(requests);
+            const [loansRes, booksRes, usersRes] = await Promise.all(requests);
             setLoansPage(pageResponse(loansRes));
+
             if (booksRes) setBooksPage(pageResponse(booksRes));
+            if (usersRes) setUsersPage(pageResponse(usersRes));
         } catch (err) {
-            setError(err.response?.data?.detail || "Erro ao carregar empréstimos");
+            setError(err.response?.data?.detail || "Erro ao carregar dados da circulação");
         } finally {
             setLoading(false);
         }
-    }, [canCreate, showAll]);
+    }, [canCreateInCurrentView, needsBorrowerSelection, showAll]);
 
     useEffect(() => {
         // Initial/API synchronization is intentionally performed from the effect.
@@ -80,25 +103,46 @@ export default function LoansPage({ showAll = false }) {
 
     const handleSubmit = async (event) => {
         event.preventDefault();
-        if (!bookId) return;
+        if (!bookId || (needsBorrowerSelection && !userId)) return;
 
         try {
             setSubmitting(true);
             setError("");
-            await api.post("/loans", { bookId: Number(bookId) });
+
+            const payload = { bookId: Number(bookId) };
+            if (needsBorrowerSelection) {
+                await createLoanForUser({ ...payload, userId: Number(userId) });
+            } else {
+                await createLoan(payload);
+            }
+
             setBookId("");
+            setUserId("");
+
+            const nextSearchParams = new URLSearchParams(searchParams);
+            nextSearchParams.delete("bookId");
+            setSearchParams(nextSearchParams, { replace: true });
+
             await loadData();
         } catch (err) {
-            setError(err.response?.data?.detail || "Erro ao solicitar empréstimo");
+            setError(err.response?.data?.detail || "Erro ao registrar empréstimo");
         } finally {
             setSubmitting(false);
         }
     };
 
     const handleAction = async (id, action) => {
+        const actions = {
+            approve: approveLoan,
+            return: returnLoan,
+            cancel: cancelLoan
+        };
+        const actionRequest = actions[action];
+        if (!actionRequest) return;
+
         try {
             setError("");
-            await api.put(`/loans/${id}/${action}`);
+            await actionRequest(id);
             await loadData();
         } catch (err) {
             setError(err.response?.data?.detail || "Não foi possível atualizar o empréstimo");
@@ -112,21 +156,41 @@ export default function LoansPage({ showAll = false }) {
                 <h1>{showAll ? "Empréstimos (Todos)" : "Meus empréstimos"}</h1>
                 <p>
                     {showAll
-                        ? "Pesquise e gerencie os empréstimos em andamento da biblioteca."
+                        ? "Pesquise e gerencie os empréstimos da biblioteca."
                         : "Acompanhe suas solicitações e empréstimos em andamento."}
                 </p>
             </div>
 
-            {!showAll && canCreate && (
+            {canCreateInCurrentView && (
                 <section className="card loan-request-card">
                     <div className="panel-heading">
                         <div>
-                            <span className="eyebrow">NOVA SOLICITAÇÃO</span>
-                            <h2>Solicitar um livro</h2>
+                            <span className="eyebrow">{needsBorrowerSelection ? "ATENDIMENTO" : "NOVA SOLICITAÇÃO"}</span>
+                            <h2>{needsBorrowerSelection ? "Registrar empréstimo para usuário" : "Solicitar um livro"}</h2>
                         </div>
                     </div>
                     <form className="loan-request-form" onSubmit={handleSubmit}>
-                        <select value={bookId} onChange={(event) => setBookId(event.target.value)}>
+                        {needsBorrowerSelection && (
+                            <select
+                                aria-label="Usuário"
+                                value={userId}
+                                onChange={(event) => setUserId(event.target.value)}
+                                required
+                            >
+                                <option value="">Selecione um usuário ativo</option>
+                                {(usersPage.content ?? []).map((user) => (
+                                    <option key={user.id} value={user.id}>
+                                        {user.name} — {user.email}
+                                    </option>
+                                ))}
+                            </select>
+                        )}
+                        <select
+                            aria-label="Livro"
+                            value={bookId}
+                            onChange={(event) => setBookId(event.target.value)}
+                            required
+                        >
                             <option value="">Selecione um livro disponível</option>
                             {availableBooks.map((book) => (
                                 <option key={book.id} value={book.id}>
@@ -134,17 +198,28 @@ export default function LoansPage({ showAll = false }) {
                                 </option>
                             ))}
                         </select>
-                        <button className="btn-primary" type="submit" disabled={!bookId || submitting}>
-                            {submitting ? "Solicitando..." : "Solicitar empréstimo"}
+                        <button
+                            className="btn-primary"
+                            type="submit"
+                            disabled={!bookId || (needsBorrowerSelection && !userId) || submitting}
+                        >
+                            {submitting
+                                ? "Registrando..."
+                                : needsBorrowerSelection
+                                    ? "Registrar empréstimo"
+                                    : "Solicitar empréstimo"}
                         </button>
                     </form>
+                    {needsBorrowerSelection && !loading && (usersPage.content ?? []).length === 0 && (
+                        <p className="error-text">Nenhum usuário ativo disponível para empréstimo.</p>
+                    )}
                 </section>
             )}
 
             <div className="card">
                 <div className="loan-list-heading">
                     <div>
-                        <h2>{showAll ? "Todos os ativos" : "Em andamento"}</h2>
+                        <h2>{showAll ? "Empréstimos em andamento" : "Em andamento"}</h2>
                         <span>{visibleLoans.length} registro(s)</span>
                     </div>
                     {showAll && canReadAll && (
@@ -160,7 +235,7 @@ export default function LoansPage({ showAll = false }) {
                 {error && <p className="error-text">{error}</p>}
                 {loading && <p>Carregando empréstimos...</p>}
                 {!loading && visibleLoans.length === 0 && (
-                    <div className="empty-state compact">Nenhum empréstimo ativo encontrado.</div>
+                    <div className="empty-state compact">Nenhum empréstimo em andamento encontrado.</div>
                 )}
 
                 <div className="loan-list">
@@ -193,11 +268,6 @@ export default function LoansPage({ showAll = false }) {
                                 {canCancel && loan.status === "REQUESTED" && (
                                     <button className="btn-secondary" onClick={() => handleAction(loan.id, "cancel")}>
                                         Cancelar
-                                    </button>
-                                )}
-                                {!showAll && canWithdraw && loan.status === "REQUESTED" && (
-                                    <button className="btn-secondary" onClick={() => handleAction(loan.id, "withdraw")}>
-                                        Retirar solicitação
                                     </button>
                                 )}
                             </div>
