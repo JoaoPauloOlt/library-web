@@ -1,6 +1,6 @@
-import { defineConfig } from "cypress";
+/* global process */
 
-export default defineConfig({
+export default {
   video: false,
   screenshotOnRunFailure: true,
   defaultCommandTimeout: 10000,
@@ -17,4 +17,4 @@ export default defineConfig({
     specPattern: "cypress/e2e/**/*.cy.{js,jsx}",
     supportFile: false,
   },
-});
+};
