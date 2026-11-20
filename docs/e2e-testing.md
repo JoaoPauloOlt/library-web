@@ -79,6 +79,8 @@ CYPRESS_BASE_URL=http://localhost:5173 \
 npm run cypress:run
 ```
 
+Os e-mails são disponibilizados por `Cypress.expose()`; as senhas são lidas com `cy.env()`, conforme a API do Cypress 16 ou superior.
+
 ## Cenários incluídos
 
 - Login com perfil administrador e visibilidade da ação de criação de livros.
