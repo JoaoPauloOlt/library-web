@@ -1,6 +1,6 @@
 # 📚 Library Web
 
-Frontend da plataforma de gestão de biblioteca. Aplicação React + Vite integrada à `library-api`, com autenticação JWT, RBAC, catálogo, circulação, histórico, relatórios e dashboard.
+Frontend da plataforma de gestão de biblioteca. Aplicação React + Vite integrada à `library-api`, com autenticação JWT, RBAC, catálogo, circulação, histórico, multas, relatórios e dashboard.
 
 ## Stack
 
@@ -43,7 +43,7 @@ src/
 - `BOOK_CREATE` controla criação de livros.
 - `AUTHOR_CREATE` controla criação de autores.
 - `LOAN_READ_ALL` controla empréstimos/histórico gerais e relatórios.
-- `LOAN_CREATE_FOR_USER` controla a criação de empréstimos em nome de terceiros.
+- `LOAN_CREATE_FOR_USER` controla a criação de empréstimos em nome de terceiros.\n- `FINE_READ_OWN` permite consultar as próprias multas.\n- `FINE_READ_ALL` permite consultar todas as multas.\n- `FINE_WAIVE` permite ao administrador isentar multas com justificativa.
 
 ### Catálogo
 
@@ -71,7 +71,7 @@ src/
 - A partir dos detalhes de um livro, o ID é encaminhado à tela de empréstimos para pré-seleção.
 - Sidebar possui submenus recolhíveis para Empréstimos e Histórico.
 
-### Relatórios
+### Multas\n\n- Usuários consultam somente as próprias multas.\n- Funcionários com `FINE_READ_ALL` consultam as multas da biblioteca.\n- Administradores com `FINE_WAIVE` podem isentar multas em aberto, informando justificativa.\n- O histórico de isenção preserva responsável, data e motivo na API.\n- O pagamento de multas não faz parte desta versão.\n\n### Relatórios
 
 Disponíveis apenas para funcionários/admins com `LOAN_READ_ALL`:
 
@@ -93,7 +93,7 @@ Disponíveis apenas para funcionários/admins com `LOAN_READ_ALL`:
 | `/loans` | autenticado |
 | `/loans/all` | `LOAN_READ_ALL` |
 | `/history` | autenticado |
-| `/history/all` | `LOAN_READ_ALL` |
+| `/history/all` | `LOAN_READ_ALL` |\n| `/fines` | `FINE_READ_OWN` ou `FINE_READ_ALL` |
 | `/reports/*` | `LOAN_READ_ALL` |
 
 ## Configuração
@@ -148,7 +148,7 @@ PUT  /loans/{id}/cancel
 
 A listagem de usuários ativos e a criação de empréstimos em nome de terceiros exigem `LOAN_CREATE_FOR_USER`. O endpoint retorna somente usuários com status `ACTIVE`; a API valida novamente o status do usuário no momento da criação do empréstimo.
 
-A listagem global de empréstimos e o histórico administrativo exigem `LOAN_READ_ALL`. A API também fornece os detalhes do catálogo:
+A listagem global de empréstimos e o histórico administrativo exigem `LOAN_READ_ALL`. A tela `/fines` consome `GET /fines/my` para usuários e `GET /fines` para funcionários com `FINE_READ_ALL`; administradores com `FINE_WAIVE` podem usar `PUT /fines/{id}/waive` com justificativa. A API também fornece os detalhes do catálogo:
 
 ```http
 GET /books/{id}
