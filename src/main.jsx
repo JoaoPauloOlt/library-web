@@ -9,6 +9,7 @@ import "./styles/reports.css";
 import "./styles/forms.css";
 import "./styles/layout-overrides.css";
 import "./styles/accessibility.css";
+import "./styles/modern-ui.css";
 import { Toaster } from "react-hot-toast";
 import { AuthProvider } from "./contexts/AuthProvider.jsx";
 

@@ -1,0 +1,124 @@
+/* Modern UI refinement — preserves the existing color tokens and brand palette. */
+:root {
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --shadow-sm: 0 2px 8px rgba(15, 23, 42, .035);
+  --shadow-md: 0 8px 24px rgba(15, 23, 42, .055);
+  --shadow-lg: 0 18px 48px rgba(15, 23, 42, .12);
+  --transition: all .2s cubic-bezier(.2,.75,.25,1);
+}
+html { scroll-behavior: smooth; }
+body { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; letter-spacing: -.012em; -webkit-font-smoothing: antialiased; }
+button, input, select, textarea { letter-spacing: inherit; }
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 3px solid color-mix(in srgb, var(--primary) 28%, transparent); outline-offset: 2px; }
+
+/* App shell and navigation */
+.layout { background: var(--bg); }
+.sidebar { padding: 26px 16px 18px; box-shadow: 8px 0 28px rgba(15,23,42,.08); }
+.sidebar-top { margin-bottom: 34px; padding: 0 6px; }
+.sidebar h2 { font-size: 19px; letter-spacing: -.035em; }
+.sidebar-logo { width: 34px; height: 34px; flex-basis: 34px; border-radius: 11px; background: rgba(255,255,255,.16); }
+.sidebar-logo svg { width: 21px; height: 21px; }
+.sidebar nav { gap: 24px; padding: 0 2px; }
+.nav-section { gap: 5px; }
+.nav-section-title { padding: 0 12px 8px; font-size: 10px; letter-spacing: .12em; }
+.sidebar nav a, .nav-parent { min-height: 44px; padding: 10px 12px; border-radius: 11px; font-size: 13px; font-weight: 600; transition: var(--transition); }
+.sidebar nav a:hover, .nav-parent:hover { background: rgba(255,255,255,.14); }
+.sidebar nav a.active { background: rgba(255,255,255,.2); box-shadow: inset 3px 0 0 rgba(255,255,255,.9); }
+.sidebar .nav-subitem { min-height: 36px; font-size: 12px; border-radius: 9px; }
+.sidebar .nav-subitem.active { background: rgba(255,255,255,.15); box-shadow: none; }
+.nav-subitems { margin: 4px 0 4px 24px; padding-left: 9px; border-left: 1px solid rgba(255,255,255,.22); }
+.sidebar-profile { padding: 18px 6px 4px; }
+.profile-avatar { box-shadow: 0 0 0 3px rgba(255,255,255,.14); }
+.content-area { background: var(--bg); }
+.header { position: sticky; top: 0; z-index: 15; height: 72px; padding: 0 clamp(18px, 3vw, 36px); border-bottom: 1px solid var(--border); box-shadow: 0 2px 12px rgba(15,23,42,.025); backdrop-filter: blur(14px); }
+.header h3 { font-size: 15px; font-weight: 700; letter-spacing: -.025em; }
+.menu-btn { width: 38px; height: 38px; border: 1px solid transparent; border-radius: 11px; }
+.menu-btn:hover { border-color: var(--border); }
+.profile-trigger { padding: 6px 10px 6px 6px !important; border: 1px solid transparent !important; border-radius: 13px !important; }
+.profile-trigger:hover { border-color: var(--border) !important; }
+.header-avatar { width: 36px; height: 36px; flex-basis: 36px; }
+.header-profile-copy strong { font-size: 12px; }
+.header-profile-copy span { color: var(--text-muted); }
+
+/* Content hierarchy */
+.page-content { padding: clamp(20px, 3vw, 36px); }
+.page-header { margin-bottom: 28px; }
+.page-header h1 { font-size: clamp(24px, 2.4vw, 32px); line-height: 1.2; letter-spacing: -.045em; font-weight: 750; }
+.page-header p { margin-top: 7px; font-size: 14px; line-height: 1.65; }
+.page-header-inline { margin-bottom: 28px; }
+.dashboard-hero { padding: clamp(24px, 3vw, 36px); border-radius: 20px; box-shadow: var(--shadow-sm); }
+.dashboard-hero h1 { font-size: clamp(25px, 2.6vw, 34px); letter-spacing: -.045em; }
+.eyebrow { font-size: 10px; letter-spacing: .14em; }
+
+/* Surfaces, cards and data */
+.card, .dashboard-panel, .book-card, .author-card, .loan-card, .history-card, .stat-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition);
+}
+.card, .dashboard-panel { padding: 24px; }
+.card:hover, .dashboard-panel:hover, .stat-card:hover, .author-card:hover { box-shadow: var(--shadow-md); }
+.dashboard-panel { background: var(--surface); }
+.stat-grid { gap: 18px; }
+.stat-card { padding: 22px; }
+.stat-card strong { font-size: 30px; letter-spacing: -.04em; }
+.panel-heading { margin-bottom: 20px; }
+.panel-heading h2 { font-size: 17px; letter-spacing: -.025em; }
+.mini-book { padding: 12px; border-radius: 12px; transition: var(--transition); }
+.mini-book:hover, .genre-book:hover { transform: translateY(-1px); }
+.book-card { padding: 16px; gap: 12px; }
+.book-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+.book-cover { border-radius: 13px; }
+.author-card, .loan-card, .history-card { padding: 20px; }
+.table-wrapper, .table-container { max-width: 100%; overflow-x: auto; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); }
+table { border-collapse: separate; border-spacing: 0; width: 100%; }
+th { color: var(--text-muted); background: var(--surface-soft); font-size: 11px; font-weight: 750; letter-spacing: .055em; text-transform: uppercase; }
+th, td { padding: 14px 16px; border-bottom: 1px solid var(--border); }
+tbody tr:last-child td { border-bottom: 0; }
+tbody tr { transition: background .16s ease; }
+tbody tr:hover { background: var(--surface-soft); }
+
+/* Controls */
+input, select, textarea { min-height: 44px; padding: 11px 13px; border-color: var(--border); border-radius: 11px; background: var(--surface); font-size: 14px; }
+input:hover, select:hover, textarea:hover { border-color: var(--border-dark); }
+input:focus, select:focus, textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 12%, transparent); }
+.btn-primary, .login-form button { min-height: 42px; padding: 10px 17px; border-radius: 11px; box-shadow: 0 3px 8px color-mix(in srgb, var(--primary) 18%, transparent); font-size: 13px; transition: var(--transition); }
+.btn-primary:hover, .login-form button:hover { transform: translateY(-1px); box-shadow: 0 6px 14px color-mix(in srgb, var(--primary) 22%, transparent); }
+.btn-secondary { min-height: 42px; padding: 10px 16px; border-radius: 11px; }
+.status, .loan-status { border-radius: 999px; letter-spacing: .01em; }
+.profile-menu { border-radius: 13px; padding: 7px; }
+.profile-menu button { padding: 10px 12px; border-radius: 9px; }
+.login-page { padding: 24px; }
+.login-form { max-width: 420px; padding: 38px; border: 1px solid var(--border); border-radius: 22px; box-shadow: var(--shadow-lg); gap: 18px; }
+.login-form h1 { font-size: 29px; letter-spacing: -.045em; }
+.login-form input { width: 100%; }
+
+/* Motion and compact screens */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
+}
+@media (max-width: 1024px) {
+  .sidebar { box-shadow: 18px 0 48px rgba(15,23,42,.18); }
+  .header { position: sticky; }
+}
+@media (max-width: 768px) {
+  .page-content { padding: 20px 16px 28px; }
+  .header { height: 64px; }
+  .dashboard-hero { padding: 22px; }
+  .stat-grid { gap: 12px; }
+  .card, .dashboard-panel { padding: 18px; }
+  .login-form { padding: 28px 22px; }
+}
+@media (max-width: 600px) {
+  .header { flex-direction: row; align-items: center; }
+  .header-right { width: auto; }
+  .header-profile-copy { display: none; }
+  .profile-trigger { padding: 4px !important; }
+  .page-header h1 { font-size: 25px; }
+  .page-header-inline { gap: 12px; }
+  .search-bar { gap: 10px; }
+  th, td { padding: 12px; }
+}
