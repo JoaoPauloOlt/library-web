@@ -1,4 +1,4 @@
-/* global Cypress, cy */
+/* global Cypress, cy, expect */
 
 Cypress.Commands.add("loginAs", (role) => {
   const passwordKey = `${role}Password`;
