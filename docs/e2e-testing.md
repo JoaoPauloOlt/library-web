@@ -1,6 +1,6 @@
-# Testes E2E locais com Cypress
+# Testes E2E e de volume com Cypress
 
-O Cypress valida a aplicação pelo navegador e complementa os testes unitários existentes do frontend e os testes automatizados do backend.
+O Cypress valida a aplicação no navegador e também executa cenários de integração HTTP contra a API real. A suíte complementa os testes unitários do frontend e os testes automatizados do backend.
 
 ## Pré-requisitos
 
@@ -16,18 +16,12 @@ Na raiz do repositório `library-api`:
 docker compose up -d --build
 ```
 
-Esse comando inicia PostgreSQL, RabbitMQ e a API com o perfil `dev`. Aguarde os containers ficarem saudáveis e confirme a API em:
+Esse comando inicia PostgreSQL, RabbitMQ e a API com o perfil `dev`. Aguarde os containers ficarem saudáveis e confirme:
 
 - API: http://localhost:8080
 - Swagger: http://localhost:8080/swagger-ui/index.html
 
-O perfil `dev` aplica o schema e os dados demonstrativos no PostgreSQL. Os testes usam contas locais já documentadas no README da API.
-
-Para acompanhar a inicialização:
-
-```bash
-docker compose logs -f library-api
-```
+O perfil `dev` inicializa schema e dados demonstrativos no PostgreSQL. As credenciais abaixo são exclusivas do banco local descartável.
 
 ## 2. Iniciar o frontend
 
@@ -39,9 +33,11 @@ cp .env.example .env
 npm run dev
 ```
 
-A configuração padrão aponta para `http://localhost:8080` e o Vite disponibiliza o frontend em http://localhost:5173.
+O Vite disponibiliza o frontend em http://localhost:5173. A variável `VITE_API_URL` deve apontar para a API que será testada (por padrão, http://localhost:8080). Reinicie o Vite após alterar o arquivo `.env`.
 
-## 3. Executar o Cypress
+## 3. Executar os testes
+
+Na raiz de `library-web`:
 
 Modo interativo:
 
@@ -49,26 +45,28 @@ Modo interativo:
 npm run cypress:open
 ```
 
-Execução headless pelo terminal:
+Suíte completa headless:
 
 ```bash
 npm run cypress:run
 ```
 
-Na primeira execução, o `npx` baixa a versão estável do Cypress. É necessária conexão com a internet nessa primeira execução.
+Somente o cenário de volume do catálogo:
 
-## Credenciais de teste
+```bash
+npm run cypress:run:bulk
+```
 
-Por padrão, os cenários usam as contas de desenvolvimento do backend:
+Na primeira execução, o `npx` baixa a versão estável do Cypress. É necessária conexão com a internet.
+
+## Credenciais e configuração
 
 | Perfil | E-mail | Senha |
 |---|---|---|
 | Administrador | admin@library.com | Admin123! |
 | Usuário | user@library.com | User123! |
 
-Essas credenciais são exclusivas do ambiente local descartável. Não as utilize em produção.
-
-É possível sobrescrever credenciais e URL sem editar os testes:
+Sobrescreva os valores por variáveis de ambiente, sem editar os testes:
 
 ```bash
 CYPRESS_ADMIN_EMAIL=admin@library.com \
@@ -76,18 +74,44 @@ CYPRESS_ADMIN_PASSWORD='Admin123!' \
 CYPRESS_USER_EMAIL=user@library.com \
 CYPRESS_USER_PASSWORD='User123!' \
 CYPRESS_BASE_URL=http://localhost:5173 \
+CYPRESS_API_URL=http://localhost:8080 \
 npm run cypress:run
 ```
 
-Os e-mails são disponibilizados por `Cypress.expose()`; as senhas são lidas com `cy.env()`, conforme a API do Cypress 16 ou superior.
+Os e-mails e configurações não sensíveis são disponibilizados por `Cypress.expose()`; as senhas são lidas com `cy.env()` e não são registradas nos comandos de digitação.
 
-## Cenários incluídos
+## Cobertura atual
 
-- Login com perfil administrador e visibilidade da ação de criação de livros.
-- Login com perfil de usuário e restrição visual da ação administrativa.
-- Carregamento da página de catálogo após autenticação.
+- Login administrativo e de usuário comum.
+- Rejeição de credenciais inválidas.
+- Redirecionamento de sessão não autenticada.
+- Visibilidade de ações conforme RBAC.
+- Consulta do catálogo e da listagem de autores.
+- Abertura e validação estrutural do formulário de criação de livro.
+- Verificação HTTP de endpoint protegido para usuário sem permissão.
+- Rejeição de chamadas anônimas à API.
+- Criação, leitura e exclusão de lote temporário de autores e livros diretamente na API.
 
-Os testes exercitam o frontend e a API real em execução. Eles não substituem testes de autorização no backend: as regras de segurança devem continuar cobertas por testes de integração da API.
+## Teste em lote (bulk)
+
+O cenário cria autores e livros com nomes/ISBNs exclusivos, consulta os livros criados e remove somente os registros daquele próprio teste. Os livros são excluídos antes dos autores para respeitar a relação entre as entidades.
+
+Por padrão, o teste cria 10 autores e 10 livros. Para ajustar o volume:
+
+```bash
+CYPRESS_BULK_SIZE=25 npm run cypress:run:bulk
+```
+
+O limite permitido é de 1 a 50 registros por entidade por execução. O teste precisa de uma API local em perfil `dev`, com usuário administrador e permissões de catálogo. Não execute esse cenário contra produção ou uma base compartilhada: ele cria e exclui registros.
+
+Se uma falha externa interromper a execução antes da limpeza, os registros têm o prefixo `Cypress Bulk` e podem ser identificados para remoção manual no ambiente descartável.
+
+## Limites e responsabilidades
+
+- Cypress valida fluxos funcionais e operações em lote de volume moderado.
+- Cypress não é ferramenta de carga concorrente; o teste de usuários simultâneos será mantido no repositório da API com k6.
+- Testes de autorização do backend continuam obrigatórios, independentemente da visibilidade dos elementos no frontend.
+- O CI atual do frontend executa lint, testes unitários e build; os testes Cypress permanecem locais neste estágio.
 
 ## Encerrar o ambiente
 
@@ -97,7 +121,7 @@ Na raiz do repositório `library-api`:
 docker compose down
 ```
 
-Para apagar também os dados locais do PostgreSQL e RabbitMQ (operação destrutiva):
+Para apagar também os volumes locais do PostgreSQL e RabbitMQ (operação destrutiva):
 
 ```bash
 docker compose down -v
