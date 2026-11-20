@@ -71,7 +71,15 @@ src/
 - A partir dos detalhes de um livro, o ID é encaminhado à tela de empréstimos para pré-seleção.
 - Sidebar possui submenus recolhíveis para Empréstimos e Histórico.
 
-### Multas\n\n- Usuários consultam somente as próprias multas.\n- Funcionários com `FINE_READ_ALL` consultam as multas da biblioteca.\n- Administradores com `FINE_WAIVE` podem isentar multas em aberto, informando justificativa.\n- O histórico de isenção preserva responsável, data e motivo na API.\n- O pagamento de multas não faz parte desta versão.\n\n### Relatórios
+### Multas
+
+- Usuários consultam somente as próprias multas.
+- Funcionários com `FINE_READ_ALL` consultam as multas da biblioteca.
+- Administradores com `FINE_WAIVE` podem isentar multas em aberto, informando justificativa.
+- O histórico de isenção preserva responsável, data e motivo na API.
+- O pagamento de multas não faz parte desta versão.
+
+### Relatórios
 
 Disponíveis apenas para funcionários/admins com `LOAN_READ_ALL`:
 
