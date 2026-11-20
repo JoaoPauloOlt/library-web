@@ -9,7 +9,7 @@ describe("Autenticação e controle de acesso", () => {
   };
 
   it("permite que um administrador entre e acesse a criação de livros", () => {
-    cy.env("adminPassword").then((adminPassword) => {
+    cy.env(["adminPassword"]).then(({ adminPassword }) => {
       login(Cypress.expose("adminEmail"), adminPassword);
     });
 
@@ -21,7 +21,7 @@ describe("Autenticação e controle de acesso", () => {
   });
 
   it("permite que um usuário comum entre, mas oculta ações administrativas", () => {
-    cy.env("userPassword").then((userPassword) => {
+    cy.env(["userPassword"]).then(({ userPassword }) => {
       login(Cypress.expose("userEmail"), userPassword);
     });
 
