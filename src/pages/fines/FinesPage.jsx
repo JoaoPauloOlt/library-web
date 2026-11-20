@@ -29,20 +29,15 @@ export default function FinesPage() {
     const [notice, setNotice] = useState("");
 
     const loadFines = useCallback(async () => {
-        if (!canReadAll && !canReadOwn) {
-            setError("Você não possui permissão para consultar multas.");
-            setLoading(false);
-            return;
-        }
-
-        setLoading(true);
-        setError("");
         try {
             const params = { page, size: PAGE_SIZE, sort: "createdAt,desc" };
             if (status) params.status = status;
-            const response = canReadAll
-                ? await getFines(params)
-                : await getMyFines(params);
+            const request = canReadAll
+                ? getFines(params)
+                : canReadOwn
+                    ? getMyFines(params)
+                    : Promise.reject(new Error("Você não possui permissão para consultar multas."));
+            const response = await request;
             const result = response.data ?? {};
             setFines(result.content ?? []);
             setTotalPages(result.totalPages ?? 0);
@@ -93,7 +88,7 @@ export default function FinesPage() {
                 </div>
                 <label className="fine-filter">
                     <span>Status</span>
-                    <select value={status} onChange={(event) => { setStatus(event.target.value); setPage(0); }}>
+                    <select value={status} onChange={(event) => { setLoading(true); setStatus(event.target.value); setPage(0); }}>
                         <option value="">Todos</option>
                         <option value="OPEN">Em aberto</option>
                         <option value="WAIVED">Isentas</option>
@@ -192,10 +187,10 @@ export default function FinesPage() {
                         <div className="fine-pagination">
                             <span>Página {page + 1} de {Math.max(totalPages, 1)}</span>
                             <div>
-                                <button type="button" className="fine-button secondary" disabled={page === 0} onClick={() => setPage((current) => current - 1)}>
+                                <button type="button" className="fine-button secondary" disabled={page === 0} onClick={() => { setLoading(true); setPage((current) => current - 1); }}>
                                     Anterior
                                 </button>
-                                <button type="button" className="fine-button secondary" disabled={page + 1 >= totalPages} onClick={() => setPage((current) => current + 1)}>
+                                <button type="button" className="fine-button secondary" disabled={page + 1 >= totalPages} onClick={() => { setLoading(true); setPage((current) => current + 1); }}>
                                     Próxima
                                 </button>
                             </div>
