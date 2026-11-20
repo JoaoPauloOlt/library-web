@@ -34,6 +34,7 @@ export default function Sidebar({ isOpen, isCollapsed, onClose }) {
     const [loansExpanded, setLoansExpanded] = useState(true);
     const [historyExpanded, setHistoryExpanded] = useState(true);
     const canReadAllLoans = hasPermission("LOAN_READ_ALL");
+    const canReadFines = hasPermission("FINE_READ_OWN") || hasPermission("FINE_READ_ALL");
     const canViewReports = canReadAllLoans;
     const displayName = user?.name || user?.email || "Usuário";
     const displayRole = roleLabel(groups);
@@ -61,6 +62,7 @@ export default function Sidebar({ isOpen, isCollapsed, onClose }) {
                     <NavItem to="/home" label="Dashboard" icon="⌂" onClose={onClose} end />
                     <NavItem to="/books" label="Livros" icon="▣" onClose={onClose} />
                     <NavItem to="/authors" label="Autores" icon="♙" onClose={onClose} />
+                    {canReadFines && <NavItem to="/fines" label="Multas" icon="$" onClose={onClose} />}
 
                     <div className="nav-group">
                         <button
