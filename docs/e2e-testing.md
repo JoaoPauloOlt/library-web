@@ -102,7 +102,7 @@ Por padrão, o teste cria 10 autores e 10 livros. Para ajustar o volume:
 CYPRESS_BULK_SIZE=25 npm run cypress:run:bulk
 ```
 
-O limite permitido é de 1 a 50 registros por entidade por execução. O teste precisa de uma API local em perfil `dev`, com usuário administrador e permissões de catálogo. Não execute esse cenário contra produção ou uma base compartilhada: ele cria e exclui registros.
+O limite permitido é de 1 a 50 registros por entidade por execução. O teste precisa de uma API local em perfil `dev`, com usuário administrador e permissões de catálogo. O próprio teste bloqueia destinos que não sejam `localhost` ou `127.0.0.1`. Não remova essa proteção nem execute o cenário contra produção ou uma base compartilhada: ele cria e exclui registros.
 
 Se uma falha externa interromper a execução antes da limpeza, os registros têm o prefixo `Cypress Bulk` e podem ser identificados para remoção manual no ambiente descartável.
 
