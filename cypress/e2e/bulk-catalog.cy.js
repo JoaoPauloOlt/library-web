@@ -1,4 +1,4 @@
-/* global describe, it, before, after, cy, Cypress */
+/* global describe, it, before, after, cy, Cypress, expect */
 
 describe("Carga funcional em lote do catálogo (API real)", () => {
   const apiUrl = () => Cypress.expose("apiUrl");
