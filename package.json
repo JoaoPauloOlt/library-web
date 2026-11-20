@@ -9,6 +9,8 @@
     "lint": "eslint .",
     "prebuild": "npm test",
     "test": "node --test src/**/*.test.js",
+    "cypress:open": "npx --yes cypress@latest open",
+    "cypress:run": "npx --yes cypress@latest run",
     "preview": "vite preview"
   },
   "dependencies": {
