@@ -43,7 +43,10 @@ src/
 - `BOOK_CREATE` controla criação de livros.
 - `AUTHOR_CREATE` controla criação de autores.
 - `LOAN_READ_ALL` controla empréstimos/histórico gerais e relatórios.
-- `LOAN_CREATE_FOR_USER` controla a criação de empréstimos em nome de terceiros.\n- `FINE_READ_OWN` permite consultar as próprias multas.\n- `FINE_READ_ALL` permite consultar todas as multas.\n- `FINE_WAIVE` permite ao administrador isentar multas com justificativa.
+- `LOAN_CREATE_FOR_USER` controla a criação de empréstimos em nome de terceiros.
+- `FINE_READ_OWN` permite consultar as próprias multas.
+- `FINE_READ_ALL` permite consultar todas as multas.
+- `FINE_WAIVE` permite ao administrador isentar multas com justificativa.
 
 ### Catálogo
 
@@ -101,7 +104,8 @@ Disponíveis apenas para funcionários/admins com `LOAN_READ_ALL`:
 | `/loans` | autenticado |
 | `/loans/all` | `LOAN_READ_ALL` |
 | `/history` | autenticado |
-| `/history/all` | `LOAN_READ_ALL` |\n| `/fines` | `FINE_READ_OWN` ou `FINE_READ_ALL` |
+| `/history/all` | `LOAN_READ_ALL` |
+| `/fines` | `FINE_READ_OWN` ou `FINE_READ_ALL` |
 | `/reports/*` | `LOAN_READ_ALL` |
 
 ## Configuração
@@ -138,6 +142,17 @@ npm run build
 ```
 
 O comando `npm run build` também executa os testes por meio do script `prebuild`. O CI executa lint, testes e build antes do merge em `develop`.
+
+## Testes E2E com Cypress
+
+Os testes de navegador são executados localmente e complementam os testes existentes:
+
+```bash
+npm run cypress:open
+npm run cypress:run
+```
+
+Consulte [docs/e2e-testing.md](docs/e2e-testing.md) para iniciar PostgreSQL, RabbitMQ, API e frontend, configurar as contas de teste e executar os cenários.
 
 ## Integração com a API
 
