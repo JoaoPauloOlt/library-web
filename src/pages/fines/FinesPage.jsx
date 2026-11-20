@@ -51,7 +51,7 @@ export default function FinesPage() {
     }, [canReadAll, canReadOwn, page, status]);
 
     useEffect(() => {
-        loadFines();
+        void Promise.resolve().then(loadFines);
     }, [loadFines]);
 
     const handleWaive = async (event) => {
