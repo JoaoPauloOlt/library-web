@@ -1,4 +1,4 @@
-/* global describe, it, cy, Cypress */
+/* global describe, it, cy */
 
 describe("Autenticação e controle de acesso", () => {
   it("permite que um administrador entre e acesse a criação de livros", () => {
