@@ -11,6 +11,7 @@
     "test": "node --test src/**/*.test.js",
     "cypress:open": "npx --yes cypress@latest open",
     "cypress:run": "npx --yes cypress@latest run",
+    "cypress:run:bulk": "npx --yes cypress@latest run --spec cypress/e2e/bulk-catalog.cy.js",
     "preview": "vite preview"
   },
   "dependencies": {
