@@ -46,6 +46,28 @@ describe("Navegação dos módulos e autorização", () => {
     cy.contains("h1", "Usuários Ativos").should("be.visible");
   });
 
+  it("valida respostas HTTP dos endpoints de catálogo, circulação e multas", () => {
+    cy.apiLoginAs("user").then((userToken) => {
+      ["/books?page=0&size=10", "/authors?page=0&size=10", "/loans/my?page=0&size=10", "/fines/my?page=0&size=10"].forEach((path) => {
+        cy.request({
+          method: "GET",
+          url: `${Cypress.expose("apiUrl")}${path}`,
+          headers: { Authorization: `Bearer ${userToken}` },
+        }).its("status").should("eq", 200);
+      });
+    });
+
+    cy.apiLoginAs("admin").then((adminToken) => {
+      ["/loans?page=0&size=10", "/fines?page=0&size=10"].forEach((path) => {
+        cy.request({
+          method: "GET",
+          url: `${Cypress.expose("apiUrl")}${path}`,
+          headers: { Authorization: `Bearer ${adminToken}` },
+        }).its("status").should("eq", 200);
+      });
+    });
+  });
+
   it("bloqueia operações administrativas da API para usuário comum", () => {
     cy.apiLoginAs("user").then((token) => {
       cy.request({
