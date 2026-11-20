@@ -1,3 +1,5 @@
+/* global describe, it, cy, Cypress */
+
 describe("Autenticação e controle de acesso", () => {
   const login = (email, password) => {
     cy.visit("/");
