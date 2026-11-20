@@ -19,6 +19,7 @@ const LoansPage = lazy(() => import("./pages/loans/LoansPage"));
 const HistoryPage = lazy(() => import("./pages/loans/HistoryPage"));
 const HomePage = lazy(() => import("./pages/dashboard/HomePage"));
 const ReportsPage = lazy(() => import("./pages/reports/ReportsPage"));
+const FinesPage = lazy(() => import("./pages/fines/FinesPage"));
 
 const RouteFallback = () => (
     <div className="route-loading" role="status" aria-live="polite">
@@ -58,6 +59,7 @@ function AppRoutes() {
                 <Route path="/loans/all" element={<WithPermission permission="LOAN_READ_ALL"><LoansPage showAll /></WithPermission>} />
                 <Route path="/history" element={<WithLayout><HistoryPage showAll={false} /></WithLayout>} />
                 <Route path="/history/all" element={<WithPermission permission="LOAN_READ_ALL"><HistoryPage showAll /></WithPermission>} />
+                <Route path="/fines" element={<WithLayout><FinesPage /></WithLayout>} />
 
                 <Route path="/reports/most-borrowed" element={<WithPermission permission="LOAN_READ_ALL"><ReportsPage type="most-borrowed" /></WithPermission>} />
                 <Route path="/reports/recommended" element={<WithPermission permission="LOAN_READ_ALL"><ReportsPage type="recommended" /></WithPermission>} />
