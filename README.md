@@ -145,14 +145,15 @@ O comando `npm run build` também executa os testes por meio do script `prebuild
 
 ## Testes E2E com Cypress
 
-Os testes de navegador são executados localmente e complementam os testes existentes:
+Os testes de navegador e o cenário de volume são executados localmente e complementam os testes existentes:
 
 ```bash
 npm run cypress:open
 npm run cypress:run
+npm run cypress:run:bulk
 ```
 
-Consulte [docs/e2e-testing.md](docs/e2e-testing.md) para iniciar PostgreSQL, RabbitMQ, API e frontend, configurar as contas de teste e executar os cenários.
+Consulte [docs/e2e-testing.md](docs/e2e-testing.md) para iniciar PostgreSQL, RabbitMQ, API e frontend, configurar as contas de teste e executar os cenários. O teste em lote cria e remove registros temporários; execute somente em ambiente local descartável.
 
 ## Integração com a API
 
