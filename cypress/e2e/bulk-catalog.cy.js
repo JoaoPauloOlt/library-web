@@ -22,6 +22,11 @@ describe("Carga funcional em lote do catálogo (API real)", () => {
   };
 
   before(() => {
+    const localApi = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(apiUrl());
+    if (!localApi) {
+      throw new Error("O teste bulk só pode ser executado contra uma API local (localhost ou 127.0.0.1).");
+    }
+
     bulkSize = Number(Cypress.expose("bulkSize") || 10);
     expect(bulkSize, "CYPRESS_BULK_SIZE deve estar entre 1 e 50").to.be.within(1, 50);
     runId = Date.now() % 1_000_000_000;
