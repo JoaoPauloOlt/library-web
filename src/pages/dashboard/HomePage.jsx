@@ -33,22 +33,28 @@ function getUtcMonthRange() {
   const now = new Date();
   const year = now.getUTCFullYear();
   const month = now.getUTCMonth();
-  const from = new Date(Date.UTC(year, month, 1));
-  const to = new Date(Date.UTC(year, month + 1, 1));
-  const format = (date) => date.toISOString().slice(0, 10);
-  return { from: format(from), to: format(to) };
+  return {
+    from: new Date(Date.UTC(year, month, 1)).toISOString().slice(0, 10),
+    to: new Date(Date.UTC(year, month + 1, 1)).toISOString().slice(0, 10),
+  };
 }
 
 export default function HomePage() {
   const { user } = useAuth();
   const [books, setBooks] = useState([]);
+  const [highlights, setHighlights] = useState([]);
   const [loans, setLoans] = useState([]);
+  const [genres, setGenres] = useState([]);
   const [summary, setSummary] = useState(null);
   const [booksLoading, setBooksLoading] = useState(true);
+  const [highlightsLoading, setHighlightsLoading] = useState(true);
   const [loansLoading, setLoansLoading] = useState(true);
+  const [genresLoading, setGenresLoading] = useState(true);
   const [summaryLoading, setSummaryLoading] = useState(true);
   const [booksError, setBooksError] = useState("");
+  const [highlightsError, setHighlightsError] = useState("");
   const [loansError, setLoansError] = useState("");
+  const [genresError, setGenresError] = useState("");
   const [summaryError, setSummaryError] = useState("");
 
   useEffect(() => {
@@ -57,22 +63,31 @@ export default function HomePage() {
     const loadDashboard = async () => {
       const { from, to } = getUtcMonthRange();
       const requests = await Promise.allSettled([
-        api.get("/books", { params: { page: 0, size: 5, sort: "loanCount,desc" } }),
+        api.get("/dashboard/most-borrowed", { params: { page: 0, size: 5 } }),
+        api.get("/dashboard/available-highlights", { params: { page: 0, size: 5 } }),
         api.get("/loans/my/active", { params: { page: 0, size: 5, sort: "requestDate,desc" } }),
+        api.get("/dashboard/genres"),
         api.get("/dashboard/my-summary", { params: { from, to } }),
       ]);
 
       if (!active) return;
-
-      const [booksResult, loansResult, summaryResult] = requests;
+      const [booksResult, highlightsResult, loansResult, genresResult, summaryResult] = requests;
 
       if (booksResult.status === "fulfilled") {
         setBooks(asList(booksResult.value.data));
         setBooksError("");
       } else {
-        setBooksError(booksResult.reason?.response?.data?.detail || "Não foi possível carregar os livros.");
+        setBooksError(booksResult.reason?.response?.data?.detail || "Não foi possível carregar os livros mais emprestados.");
       }
       setBooksLoading(false);
+
+      if (highlightsResult.status === "fulfilled") {
+        setHighlights(asList(highlightsResult.value.data));
+        setHighlightsError("");
+      } else {
+        setHighlightsError(highlightsResult.reason?.response?.data?.detail || "Não foi possível carregar os destaques.");
+      }
+      setHighlightsLoading(false);
 
       if (loansResult.status === "fulfilled") {
         setLoans(asList(loansResult.value.data));
@@ -81,6 +96,14 @@ export default function HomePage() {
         setLoansError(loansResult.reason?.response?.data?.detail || "Não foi possível carregar os empréstimos.");
       }
       setLoansLoading(false);
+
+      if (genresResult.status === "fulfilled") {
+        setGenres(asList(genresResult.value.data));
+        setGenresError("");
+      } else {
+        setGenresError(genresResult.reason?.response?.data?.detail || "Não foi possível carregar os gêneros.");
+      }
+      setGenresLoading(false);
 
       if (summaryResult.status === "fulfilled") {
         setSummary(summaryResult.value.data);
@@ -95,48 +118,10 @@ export default function HomePage() {
     return () => { active = false; };
   }, []);
 
-  const mostBorrowed = useMemo(
-    () => [...books]
-      .sort((a, b) => Number(b.loanCount ?? 0) - Number(a.loanCount ?? 0)
-        || a.title.localeCompare(b.title))
-      .slice(0, 5),
-    [books]
-  );
-
-  const highlights = useMemo(
-    () => [...books]
-      .filter((book) => Number(book.availableCopies ?? 0) > 0)
-      .sort((a, b) => Number(Boolean(b.coverUrl)) - Number(Boolean(a.coverUrl))
-        || Number(b.loanCount ?? 0) - Number(a.loanCount ?? 0)
-        || a.title.localeCompare(b.title))
-      .slice(0, 5),
-    [books]
-  );
-
   const activeLoans = useMemo(
     () => loans.filter((loan) => !closedStatuses.includes(loan.status)).slice(0, 5),
     [loans]
   );
-
-  const genres = useMemo(() => {
-    const groups = new Map();
-    books.forEach((book) => {
-      const genre = book.genre || "Não informado";
-      const current = groups.get(genre) || { genre, count: 0, books: [] };
-      current.count += Number(book.loanCount ?? 0);
-      current.books.push(book);
-      groups.set(genre, current);
-    });
-    return [...groups.values()]
-      .sort((a, b) => b.count - a.count || a.genre.localeCompare(b.genre))
-      .slice(0, 5)
-      .map((group) => ({
-        ...group,
-        books: group.books
-          .sort((a, b) => Number(b.loanCount ?? 0) - Number(a.loanCount ?? 0))
-          .slice(0, 4),
-      }));
-  }, [books]);
 
   const stats = [
     { label: "Total de livros", value: summary?.totalBooks, note: "Itens cadastrados no acervo" },
@@ -156,9 +141,7 @@ export default function HomePage() {
         {stats.map((stat) => (
           <div className="stat-card" key={stat.label}>
             <span>{stat.label}</span>
-            <strong>
-              {summaryLoading ? "—" : summaryError ? "Indisponível" : stat.value ?? "—"}
-            </strong>
+            <strong>{summaryLoading ? "—" : summaryError ? "Indisponível" : stat.value ?? "—"}</strong>
             <small>{summaryError || stat.note}</small>
           </div>
         ))}
@@ -170,10 +153,10 @@ export default function HomePage() {
             ? <div className="dashboard-loading">Carregando...</div>
             : booksError
               ? <div className="error-text">{booksError}</div>
-              : mostBorrowed.length === 0
+              : books.length === 0
                 ? <div className="empty-state compact">Ainda não há dados de empréstimos.</div>
                 : <div className="popular-list">
-                    {mostBorrowed.map((book, index) => (
+                    {books.map((book, index) => (
                       <Link className="popular-item" to={`/books/${book.id}`} key={book.id}>
                         <span className="popular-position">{index + 1}</span>
                         <BookCover book={book} className="dashboard-book-cover ranking-cover" />
@@ -188,10 +171,10 @@ export default function HomePage() {
         </Panel>
 
         <Panel eyebrow="DESTAQUES" title="Os destaques" action={<Link to="/books">Explorar</Link>}>
-          {booksLoading
+          {highlightsLoading
             ? <div className="dashboard-loading">Carregando...</div>
-            : booksError
-              ? <div className="error-text">{booksError}</div>
+            : highlightsError
+              ? <div className="error-text">{highlightsError}</div>
               : highlights.length === 0
                 ? <div className="empty-state compact">Nenhum livro disponível.</div>
                 : <div className="highlight-list">
@@ -234,31 +217,20 @@ export default function HomePage() {
 
       <section className="dashboard-panel genres-panel">
         <div className="panel-heading">
-          <div><span className="eyebrow">POPULARIDADE</span><h2>Gêneros entre os livros mais emprestados</h2></div>
+          <div><span className="eyebrow">POPULARIDADE</span><h2>Empréstimos por gênero no acervo</h2></div>
           <Link to="/books">Explorar acervo</Link>
         </div>
-        {booksLoading
+        {genresLoading
           ? <div className="dashboard-loading">Carregando...</div>
-          : booksError
-            ? <div className="error-text">{booksError}</div>
+          : genresError
+            ? <div className="error-text">{genresError}</div>
             : genres.length === 0
               ? <div className="empty-state compact">Ainda não há dados de leitura.</div>
               : <div className="genre-list">
-                  {genres.map((group) => (
+                  {genres.slice(0, 5).map((group) => (
                     <article className="genre-section" key={group.genre}>
                       <div className="genre-heading">
-                        <div><h3>{group.genre}</h3><span>{group.count} empréstimo(s)</span></div>
-                      </div>
-                      <div className="genre-books">
-                        {group.books.map((book) => (
-                          <Link className="genre-book" to={`/books/${book.id}`} key={book.id}>
-                            <BookCover book={book} className="dashboard-book-cover genre-cover" />
-                            <div>
-                              <strong>{book.title}</strong>
-                              <span>{book.authors?.map((author) => author.name).join(", ") || "Autor não informado"}</span>
-                            </div>
-                          </Link>
-                        ))}
+                        <div><h3>{group.genre}</h3><span>{group.loanCount} empréstimo(s)</span></div>
                       </div>
                     </article>
                   ))}
