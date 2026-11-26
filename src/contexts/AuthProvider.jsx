@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { AuthContext } from "./AuthContext";
 import { loginRequest, logoutRequest } from "../services/authService";
 import { getAccessToken, getRefreshToken, saveTokens, clearTokens } from "../services/authStorage";
@@ -7,6 +7,25 @@ import { decodeJwtPayload, hasAnyPermission, hasPermission } from "../utils/jwt"
 export const AuthProvider = ({ children }) => {
     const [token, setToken] = useState(getAccessToken);
     const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        const handleTokenRefreshed = (event) => {
+            setToken(event.detail?.token ?? getAccessToken());
+        };
+
+        const handleSessionExpired = () => {
+            setToken(null);
+            window.location.href = "/";
+        };
+
+        window.addEventListener("auth:token-refreshed", handleTokenRefreshed);
+        window.addEventListener("auth:session-expired", handleSessionExpired);
+
+        return () => {
+            window.removeEventListener("auth:token-refreshed", handleTokenRefreshed);
+            window.removeEventListener("auth:session-expired", handleSessionExpired);
+        };
+    }, []);
 
     const claims = useMemo(() => decodeJwtPayload(token), [token]);
     const permissions = claims?.permissions ?? [];
