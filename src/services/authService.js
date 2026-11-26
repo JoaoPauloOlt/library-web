@@ -5,8 +5,13 @@ export const loginRequest = async (email, password) => {
     return data;
 };
 
-export const logoutRequest = async (refreshToken, accessToken) => {
-    await api.post("/auth/logout", { refreshToken, accessToken });
+export const refreshRequest = async () => {
+    const { data } = await api.post("/auth/refresh");
+    return data;
+};
+
+export const logoutRequest = async () => {
+    await api.post("/auth/logout");
 };
 
 export const registerRequest = async (payload) => {
