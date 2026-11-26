@@ -1,6 +1,7 @@
-import api, { refreshAccessToken } from "./axios";
+import api, { ensureCsrfToken, refreshAccessToken, resetCsrfToken } from "./axios";
 
 export const loginRequest = async (email, password) => {
+    await ensureCsrfToken();
     const { data } = await api.post("/auth/login", { email, password });
     return data;
 };
@@ -11,7 +12,11 @@ export const refreshRequest = async () => {
 };
 
 export const logoutRequest = async () => {
-    await api.post("/auth/logout");
+    try {
+        await api.post("/auth/logout");
+    } finally {
+        resetCsrfToken();
+    }
 };
 
 export const registerRequest = async (payload) => {
