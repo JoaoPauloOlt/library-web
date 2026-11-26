@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import api from "../../services/axios";
 import { useAuth } from "../../hooks/useAuth";
 import "./dashboard.css";
+import { formatApiDate, getSaoPauloMonthRange } from "../../utils/dateTime.js";
 
 const asList = (data) => Array.isArray(data) ? data : data?.content ?? [];
 const closedStatuses = ["RETURNED", "CANCELED", "CANCELLED"];
@@ -67,7 +68,7 @@ export default function HomePage() {
     let active = true;
 
     const loadDashboard = async () => {
-      const { from, to } = getLocalMonthRange();
+      const { from, to } = getSaoPauloMonthRange();
       const requests = await Promise.allSettled([
         api.get("/dashboard/most-borrowed", { params: { page: 0, size: 5 } }),
         api.get("/dashboard/available-highlights", { params: { page: 0, size: 5 } }),
@@ -232,7 +233,7 @@ export default function HomePage() {
                         <BookCover book={{ title: loan.bookTitle, coverUrl: loan.coverUrl }} className="dashboard-book-cover loan-cover" />
                         <span className="book-list-info">
                           <strong>{loan.bookTitle}</strong>
-                          <span>{loan.dueDate ? `Prazo: ${new Date(loan.dueDate).toLocaleDateString("pt-BR")}` : "Sem prazo definido"}</span>
+                          <span>{loan.dueDate ? `Prazo: ${formatApiDate(loan.dueDate)}` : "Sem prazo definido"}</span>
                         </span>
                         <span className={`loan-status ${loan.status === "ACTIVE" ? "success" : loan.status === "REQUESTED" ? "pending" : "neutral"}`}>
                           {loan.status === "ACTIVE" ? "Ativo" : loan.status === "REQUESTED" ? "Solicitado" : loan.status}
