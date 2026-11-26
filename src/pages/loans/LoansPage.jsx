@@ -12,6 +12,7 @@ import {
 } from "../../api/loanApi";
 import api from "../../services/axios";
 import { useAuth } from "../../hooks/useAuth";
+import { formatApiDate } from "../../utils/dateTime.js";
 
 const emptyPage = { content: [], page: 0, totalPages: 0, totalElements: 0 };
 const CLOSED_STATUSES = ["RETURNED", "CANCELED"];
@@ -247,7 +248,7 @@ export default function LoansPage({ showAll = false }) {
                                 {showAll && <p>Usuário: {loan.userName}</p>}
                                 <p>Status: <strong>{statusLabel[loan.status] || loan.status}</strong></p>
                                 {loan.dueDate && (
-                                    <p>Prazo: {new Date(loan.dueDate).toLocaleDateString("pt-BR")}</p>
+                                    <p>Prazo: {formatApiDate(loan.dueDate)}</p>
                                 )}
                             </div>
 
