@@ -1,5 +1,10 @@
 import axios from "axios";
-import { clearTokens, getAccessToken } from "./authStorage";
+import {
+    clearTokens,
+    getAccessToken,
+    getRefreshToken,
+    saveTokens
+} from "./authStorage";
 
 const apiUrl =
     import.meta.env.VITE_API_URL ||
@@ -11,9 +16,49 @@ if (!apiUrl) {
     );
 }
 
-const api = axios.create({
-    baseURL: apiUrl.replace(/\/$/, "")
-});
+const baseURL = apiUrl.replace(/\/$/, "");
+
+const api = axios.create({ baseURL });
+
+// Refresh requests use the plain Axios client to avoid interceptor recursion.
+let refreshPromise = null;
+
+const notifyTokenRefreshed = (token) => {
+    if (typeof window !== "undefined") {
+        window.dispatchEvent(
+            new CustomEvent("auth:token-refreshed", { detail: { token } })
+        );
+    }
+};
+
+const notifySessionExpired = () => {
+    if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("auth:session-expired"));
+    }
+};
+
+const refreshAccessToken = () => {
+    if (!refreshPromise) {
+        const refreshToken = getRefreshToken();
+
+        if (!refreshToken) {
+            return Promise.reject(new Error("Refresh token is unavailable"));
+        }
+
+        refreshPromise = axios
+            .post(`${baseURL}/auth/refresh`, { refreshToken })
+            .then(({ data }) => {
+                saveTokens(data);
+                notifyTokenRefreshed(data.token);
+                return data.token;
+            })
+            .finally(() => {
+                refreshPromise = null;
+            });
+    }
+
+    return refreshPromise;
+};
 
 api.interceptors.request.use((config) => {
     const token = getAccessToken();
@@ -27,13 +72,30 @@ api.interceptors.request.use((config) => {
 
 api.interceptors.response.use(
     (response) => response,
-    (err) => {
-        if (err.response?.status === 401) {
-            clearTokens();
-            window.location.href = "/";
+    async (err) => {
+        const config = err.config;
+        const status = err.response?.status;
+        const requestUrl = config?.url ?? "";
+        const isAuthenticationRequest = /^\/auth\/(login|refresh|logout)(?:\?|$)/.test(
+            requestUrl
+        );
+
+        if (status !== 401 || !config || config._retry || isAuthenticationRequest) {
+            return Promise.reject(err);
         }
 
-        return Promise.reject(err);
+        config._retry = true;
+
+        try {
+            const token = await refreshAccessToken();
+            config.headers = config.headers ?? {};
+            config.headers.Authorization = `Bearer ${token}`;
+            return api(config);
+        } catch (refreshError) {
+            clearTokens();
+            notifySessionExpired();
+            return Promise.reject(refreshError);
+        }
     }
 );
 
