@@ -1,12 +1,22 @@
-import api from "./axios";
+import api, { ensureCsrfToken, refreshAccessToken, resetCsrfToken } from "./axios";
 
 export const loginRequest = async (email, password) => {
+    await ensureCsrfToken();
     const { data } = await api.post("/auth/login", { email, password });
     return data;
 };
 
-export const logoutRequest = async (refreshToken, accessToken) => {
-    await api.post("/auth/logout", { refreshToken, accessToken });
+export const refreshRequest = async () => {
+    const token = await refreshAccessToken();
+    return { token };
+};
+
+export const logoutRequest = async () => {
+    try {
+        await api.post("/auth/logout");
+    } finally {
+        resetCsrfToken();
+    }
 };
 
 export const registerRequest = async (payload) => {

@@ -1,27 +1,43 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AuthContext } from "./AuthContext";
-import { loginRequest, logoutRequest } from "../services/authService";
-import { getAccessToken, getRefreshToken, saveTokens, clearTokens } from "../services/authStorage";
+import { loginRequest, logoutRequest, refreshRequest } from "../services/authService";
+import { saveTokens, clearTokens } from "../services/authStorage";
 import { decodeJwtPayload, hasAnyPermission, hasPermission } from "../utils/jwt";
 
 export const AuthProvider = ({ children }) => {
-    const [token, setToken] = useState(getAccessToken);
-    const [loading, setLoading] = useState(false);
+    const [token, setToken] = useState(null);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        let active = true;
         const handleTokenRefreshed = (event) => {
-            setToken(event.detail?.token ?? getAccessToken());
+            const refreshedToken = event.detail?.token;
+            if (refreshedToken) setToken(refreshedToken);
         };
-
         const handleSessionExpired = () => {
+            clearTokens();
             setToken(null);
             window.location.href = "/";
         };
-
         window.addEventListener("auth:token-refreshed", handleTokenRefreshed);
         window.addEventListener("auth:session-expired", handleSessionExpired);
 
+        // Restore after reload using the browser-managed HttpOnly refresh cookie.
+        refreshRequest()
+            .then((data) => {
+                if (active) {
+                    saveTokens(data);
+                    setToken(data.token);
+                }
+            })
+            .catch(() => {
+                clearTokens();
+                if (active) setToken(null);
+            })
+            .finally(() => { if (active) setLoading(false); });
+
         return () => {
+            active = false;
             window.removeEventListener("auth:token-refreshed", handleTokenRefreshed);
             window.removeEventListener("auth:session-expired", handleSessionExpired);
         };
@@ -33,7 +49,6 @@ export const AuthProvider = ({ children }) => {
 
     const login = useCallback(async (email, password) => {
         setLoading(true);
-
         try {
             const data = await loginRequest(email, password);
             saveTokens(data);
@@ -44,15 +59,10 @@ export const AuthProvider = ({ children }) => {
     }, []);
 
     const logout = useCallback(async () => {
-        const accessToken = getAccessToken();
-        const refreshToken = getRefreshToken();
-
         try {
-            if (accessToken && refreshToken) {
-                await logoutRequest(refreshToken, accessToken);
-            }
+            await logoutRequest();
         } catch {
-            // Local cleanup still occurs when server-side logout cannot be completed.
+            // Local cleanup still occurs when server-side logout cannot complete.
         } finally {
             clearTokens();
             setToken(null);
@@ -60,24 +70,11 @@ export const AuthProvider = ({ children }) => {
     }, []);
 
     const value = useMemo(() => ({
-        token,
-        claims,
-        permissions,
-        groups,
-        user: claims
-            ? {
-                id: claims.sub,
-                name: claims.name,
-                email: claims.email
-            }
-            : null,
-        isAuthenticated: !!token,
-        loading,
-        login,
-        logout,
+        token, claims, permissions, groups,
+        user: claims ? { id: claims.sub, name: claims.name, email: claims.email } : null,
+        isAuthenticated: !!token, loading, login, logout,
         hasPermission: (permission) => hasPermission(token, permission),
-        hasAnyPermission: (requiredPermissions) =>
-            hasAnyPermission(token, requiredPermissions)
+        hasAnyPermission: (requiredPermissions) => hasAnyPermission(token, requiredPermissions)
     }), [token, claims, permissions, groups, loading, login, logout]);
 
     return (

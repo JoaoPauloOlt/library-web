@@ -1,28 +1,30 @@
-const ACCESS_TOKEN_KEY = "token";
-const REFRESH_TOKEN_KEY = "refreshToken";
+let accessToken = null;
 
-const storage = typeof window !== "undefined" ? window.localStorage : null;
-
-const read = (key) => storage?.getItem(key) || null;
-
-export const getAccessToken = () => read(ACCESS_TOKEN_KEY);
-export const getRefreshToken = () => read(REFRESH_TOKEN_KEY);
-
-export const saveTokens = ({ token, refreshToken }) => {
-    if (!storage || typeof token !== "string" || !token.trim()) {
-        throw new Error("Invalid authentication token");
-    }
-
-    storage.setItem(ACCESS_TOKEN_KEY, token);
-
-    if (typeof refreshToken === "string" && refreshToken.trim()) {
-        storage.setItem(REFRESH_TOKEN_KEY, refreshToken);
-    } else {
-        storage.removeItem(REFRESH_TOKEN_KEY);
+const removeLegacyTokens = () => {
+    try {
+        if (typeof window !== "undefined" && window.localStorage) {
+            window.localStorage.removeItem("token");
+            window.localStorage.removeItem("refreshToken");
+        }
+    } catch {
+        // Storage may be unavailable; authentication no longer depends on it.
     }
 };
 
+// Remove credentials persisted by previous versions as soon as this module loads.
+removeLegacyTokens();
+
+export const getAccessToken = () => accessToken;
+export const getRefreshToken = () => null;
+
+export const saveTokens = ({ token }) => {
+    if (typeof token !== "string" || !token.trim()) {
+        throw new Error("Invalid authentication token");
+    }
+    accessToken = token;
+};
+
 export const clearTokens = () => {
-    storage?.removeItem(ACCESS_TOKEN_KEY);
-    storage?.removeItem(REFRESH_TOKEN_KEY);
+    accessToken = null;
+    removeLegacyTokens();
 };

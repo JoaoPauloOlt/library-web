@@ -1,10 +1,5 @@
 import axios from "axios";
-import {
-    clearTokens,
-    getAccessToken,
-    getRefreshToken,
-    saveTokens
-} from "./authStorage";
+import { clearTokens, getAccessToken, saveTokens } from "./authStorage";
 
 const apiUrl =
     import.meta.env.VITE_API_URL ||
@@ -17,11 +12,31 @@ if (!apiUrl) {
 }
 
 const baseURL = apiUrl.replace(/\/$/, "");
-
-const api = axios.create({ baseURL });
-
-// Refresh requests use the plain Axios client to avoid interceptor recursion.
+const api = axios.create({ baseURL, withCredentials: true });
 let refreshPromise = null;
+let csrfToken = null;
+let csrfPromise = null;
+
+export const ensureCsrfToken = () => {
+    if (csrfToken) return Promise.resolve(csrfToken);
+    if (!csrfPromise) {
+        csrfPromise = axios
+            .get(baseURL + "/auth/csrf", { withCredentials: true })
+            .then(({ data }) => {
+                if (!data?.token) throw new Error("CSRF token was not returned by the API.");
+                csrfToken = data.token;
+                api.defaults.headers.common["X-XSRF-TOKEN"] = csrfToken;
+                return csrfToken;
+            })
+            .finally(() => { csrfPromise = null; });
+    }
+    return csrfPromise;
+};
+
+export const resetCsrfToken = () => {
+    csrfToken = null;
+    delete api.defaults.headers.common["X-XSRF-TOKEN"];
+};
 
 const notifyTokenRefreshed = (token) => {
     if (typeof window !== "undefined") {
@@ -37,36 +52,26 @@ const notifySessionExpired = () => {
     }
 };
 
-const refreshAccessToken = () => {
+export const refreshAccessToken = () => {
     if (!refreshPromise) {
-        const refreshToken = getRefreshToken();
-
-        if (!refreshToken) {
-            return Promise.reject(new Error("Refresh token is unavailable"));
-        }
-
-        refreshPromise = axios
-            .post(`${baseURL}/auth/refresh`, { refreshToken })
+        refreshPromise = ensureCsrfToken()
+            .then((token) => axios.post(baseURL + "/auth/refresh", null, {
+                withCredentials: true,
+                headers: { "X-XSRF-TOKEN": token }
+            }))
             .then(({ data }) => {
                 saveTokens(data);
                 notifyTokenRefreshed(data.token);
                 return data.token;
             })
-            .finally(() => {
-                refreshPromise = null;
-            });
+            .finally(() => { refreshPromise = null; });
     }
-
     return refreshPromise;
 };
 
 api.interceptors.request.use((config) => {
     const token = getAccessToken();
-
-    if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-    }
-
+    if (token) config.headers.Authorization = `Bearer ${token}`;
     return config;
 });
 
@@ -76,26 +81,19 @@ api.interceptors.response.use(
         const config = err.config;
         const status = err.response?.status;
         const requestUrl = config?.url ?? "";
-        const isAuthenticationRequest = /^\/auth\/(login|refresh|logout)(?:\?|$)/.test(
-            requestUrl
-        );
+        const isAuthenticationRequest = ["/auth/login", "/auth/refresh", "/auth/logout"].some((path) => requestUrl === path || requestUrl.startsWith(path + "?"));
 
-        if (status !== 401 || !config || isAuthenticationRequest) {
-            return Promise.reject(err);
-        }
-
+        if (status !== 401 || !config || isAuthenticationRequest) return Promise.reject(err);
         if (config._retry) {
             clearTokens();
             notifySessionExpired();
             return Promise.reject(err);
         }
-
         config._retry = true;
-
         try {
             const token = await refreshAccessToken();
             config.headers = config.headers ?? {};
-            config.headers.Authorization = `Bearer ${token}`;
+            config.headers.Authorization = "Bearer " + token;
             return api(config);
         } catch (refreshError) {
             clearTokens();
