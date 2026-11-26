@@ -9,7 +9,7 @@ function parseApiDateTime(value) {
 
     // API LocalDateTime fields represent UTC but do not include an offset.
     // Treat offset-less values as UTC instead of browser-local time.
-    const hasOffset = /(?:Z|[+-]\\d{2}:?\\d{2})$/i.test(value);
+    const hasOffset = /(?:Z|[+-]\d{2}:?\d{2})$/i.test(value);
     const date = new Date(hasOffset ? value : `${value}Z`);
     return Number.isNaN(date.getTime()) ? null : date;
 }
