@@ -29,14 +29,18 @@ function Panel({ eyebrow, title, children, action }) {
   );
 }
 
-function getUtcMonthRange() {
+function formatLocalDate(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function getLocalMonthRange() {
   const now = new Date();
-  const year = now.getUTCFullYear();
-  const month = now.getUTCMonth();
-  return {
-    from: new Date(Date.UTC(year, month, 1)).toISOString().slice(0, 10),
-    to: new Date(Date.UTC(year, month + 1, 1)).toISOString().slice(0, 10),
-  };
+  const from = new Date(now.getFullYear(), now.getMonth(), 1);
+  const to = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+  return { from: formatLocalDate(from), to: formatLocalDate(to) };
 }
 
 export default function HomePage() {
@@ -45,6 +49,8 @@ export default function HomePage() {
   const [highlights, setHighlights] = useState([]);
   const [loans, setLoans] = useState([]);
   const [genres, setGenres] = useState([]);
+  const [genreBooks, setGenreBooks] = useState({});
+  const [genreBookErrors, setGenreBookErrors] = useState({});
   const [summary, setSummary] = useState(null);
   const [booksLoading, setBooksLoading] = useState(true);
   const [highlightsLoading, setHighlightsLoading] = useState(true);
@@ -61,7 +67,7 @@ export default function HomePage() {
     let active = true;
 
     const loadDashboard = async () => {
-      const { from, to } = getUtcMonthRange();
+      const { from, to } = getLocalMonthRange();
       const requests = await Promise.allSettled([
         api.get("/dashboard/most-borrowed", { params: { page: 0, size: 5 } }),
         api.get("/dashboard/available-highlights", { params: { page: 0, size: 5 } }),
@@ -98,8 +104,30 @@ export default function HomePage() {
       setLoansLoading(false);
 
       if (genresResult.status === "fulfilled") {
-        setGenres(asList(genresResult.value.data));
+        const genreMetrics = asList(genresResult.value.data).slice(0, 5);
+        setGenres(genreMetrics);
         setGenresError("");
+        const genreBookResults = await Promise.allSettled(genreMetrics.map((group) =>
+          api.get(`/dashboard/genres/${encodeURIComponent(group.genre)}/books`, {
+            params: { page: 0, size: 4 },
+          })
+        ));
+        if (active) {
+          const booksByGenre = {};
+          const errorsByGenre = {};
+          genreBookResults.forEach((result, index) => {
+            const genre = genreMetrics[index].genre;
+            if (result.status === "fulfilled") {
+              booksByGenre[genre] = asList(result.value.data);
+            } else {
+              booksByGenre[genre] = [];
+              errorsByGenre[genre] = result.reason?.response?.data?.detail
+                || "Não foi possível carregar os livros deste gênero.";
+            }
+          });
+          setGenreBooks(booksByGenre);
+          setGenreBookErrors(errorsByGenre);
+        }
       } else {
         setGenresError(genresResult.reason?.response?.data?.detail || "Não foi possível carregar os gêneros.");
       }
@@ -227,11 +255,27 @@ export default function HomePage() {
             : genres.length === 0
               ? <div className="empty-state compact">Ainda não há dados de leitura.</div>
               : <div className="genre-list">
-                  {genres.slice(0, 5).map((group) => (
+                  {genres.map((group) => (
                     <article className="genre-section" key={group.genre}>
                       <div className="genre-heading">
                         <div><h3>{group.genre}</h3><span>{group.loanCount} empréstimo(s)</span></div>
                       </div>
+                      {genreBookErrors[group.genre]
+                        ? <p className="error-text">{genreBookErrors[group.genre]}</p>
+                        : genreBooks[group.genre]?.length
+                          ? <div className="genre-books">
+                              {genreBooks[group.genre].map((book) => (
+                                <Link className="genre-book" to={`/books/${book.id}`} key={book.id}>
+                                  <BookCover book={book} className="dashboard-book-cover genre-cover" />
+                                  <div>
+                                    <strong>{book.title}</strong>
+                                    <span>{book.authors?.map((author) => author.name).join(", ") || "Autor não informado"}</span>
+                                    <small>{Number(book.loanCount ?? 0)} empréstimo(s)</small>
+                                  </div>
+                                </Link>
+                              ))}
+                            </div>
+                          : <div className="empty-state compact">Nenhum livro encontrado para este gênero.</div>}
                     </article>
                   ))}
                 </div>}
