@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import api from "../../services/axios";
+import { formatApiDate, formatApiDateTime } from "../../utils/dateTime.js";
 
 const emptyPage = { content: [], page: 0, totalPages: 0, totalElements: 0 };
 
@@ -109,19 +110,19 @@ export default function HistoryPage({ showAll = false }) {
 
                         {showAll && <p><strong>Usuário:</strong> {loan.userName}</p>}
                         {loan.requestDate && (
-                            <p><strong>Solicitação:</strong> {new Date(loan.requestDate).toLocaleString("pt-BR")}</p>
+                            <p><strong>Solicitação:</strong> {formatApiDateTime(loan.requestDate)}</p>
                         )}
                         {loan.approvalDate && (
-                            <p><strong>Aprovação:</strong> {new Date(loan.approvalDate).toLocaleString("pt-BR")}</p>
+                            <p><strong>Aprovação:</strong> {formatApiDateTime(loan.approvalDate)}</p>
                         )}
                         {loan.withdrawDate && (
-                            <p><strong>Retirada:</strong> {new Date(loan.withdrawDate).toLocaleString("pt-BR")}</p>
+                            <p><strong>Retirada:</strong> {formatApiDateTime(loan.withdrawDate)}</p>
                         )}
                         {loan.dueDate && (
-                            <p><strong>Prazo:</strong> {new Date(loan.dueDate).toLocaleDateString("pt-BR")}</p>
+                            <p><strong>Prazo:</strong> {formatApiDate(loan.dueDate)}</p>
                         )}
                         {loan.returnDate && (
-                            <p><strong>Devolução:</strong> {new Date(loan.returnDate).toLocaleString("pt-BR")}</p>
+                            <p><strong>Devolução:</strong> {formatApiDateTime(loan.returnDate)}</p>
                         )}
                     </article>
                 ))}
