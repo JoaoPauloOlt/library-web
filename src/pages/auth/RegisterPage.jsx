@@ -32,8 +32,8 @@ export default function RegisterPage() {
             newErrors.email = "Email inválido";
         }
 
-        if (form.password.length < 6) {
-            newErrors.password = "Senha deve ter no mínimo 6 caracteres";
+        if (form.password.length < 8) {
+            newErrors.password = "Senha deve ter no mínimo 8 caracteres";
         }
 
         if (!form.telephone.trim()) {
@@ -92,7 +92,7 @@ export default function RegisterPage() {
                 <input name="email" placeholder="Email" onChange={handleChange} />
                 {errors.email && <span className="error">{errors.email}</span>}
 
-                <input name="password" type="password" placeholder="Senha" onChange={handleChange} />
+                <input name="password" type="password" placeholder="Senha" minLength={8} maxLength={100} onChange={handleChange} />
                 {errors.password && <span className="error">{errors.password}</span>}
 
                 <input name="telephone" placeholder="Telefone" onChange={handleChange} />
