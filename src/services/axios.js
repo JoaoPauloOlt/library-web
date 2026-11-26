@@ -81,7 +81,7 @@ api.interceptors.response.use(
         const config = err.config;
         const status = err.response?.status;
         const requestUrl = config?.url ?? "";
-        const isAuthenticationRequest = /^\\/auth\\/(login|refresh|logout)(?:\\?|$)/.test(requestUrl);
+        const isAuthenticationRequest = ["/auth/login", "/auth/refresh", "/auth/logout"].some((path) => requestUrl === path || requestUrl.startsWith(path + "?"));
 
         if (status !== 401 || !config || isAuthenticationRequest) return Promise.reject(err);
         if (config._retry) {
