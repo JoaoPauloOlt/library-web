@@ -30,20 +30,6 @@ function Panel({ eyebrow, title, children, action }) {
   );
 }
 
-function formatLocalDate(date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
-
-function getLocalMonthRange() {
-  const now = new Date();
-  const from = new Date(now.getFullYear(), now.getMonth(), 1);
-  const to = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-  return { from: formatLocalDate(from), to: formatLocalDate(to) };
-}
-
 export default function HomePage() {
   const { user } = useAuth();
   const [books, setBooks] = useState([]);
