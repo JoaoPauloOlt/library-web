@@ -80,7 +80,13 @@ api.interceptors.response.use(
             requestUrl
         );
 
-        if (status !== 401 || !config || config._retry || isAuthenticationRequest) {
+        if (status !== 401 || !config || isAuthenticationRequest) {
+            return Promise.reject(err);
+        }
+
+        if (config._retry) {
+            clearTokens();
+            notifySessionExpired();
             return Promise.reject(err);
         }
 
